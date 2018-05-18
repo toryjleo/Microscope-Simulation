@@ -4,19 +4,22 @@ using UnityEngine;
 
 // Class used to manage the human and zombie objects in the scene
 public class AgentManager : MonoBehaviour {
-	public GameObject zombiePrefab;
-	private List<GameObject> humans;
-	private List<GameObject> zombies;
-	public Vehicle vehicle;
-	private GameObject[] obsticles;
-	private bool seeking, fleeing;
+	public Vehicle arrowPrefab;
+	public List<Vehicle> vehicles;
+	private const int NUMBER_OF_ARROWS_TO_SPAWN = 5;
+	private const float SEPERATE_MULTIPLIER = 1.5f;
+	private const float ALIGN_MODIFIER = 1;
+	private const float COHESION_MULTIPLIER = 1;
+	private const float SEEK_MULTIPLIER = 1;
 	public bool drawDebugLines;
 	// Use this for initialization
 	void Start () {
-		humans = new List<GameObject> ();
-		zombies = new List<GameObject> ();
 		drawDebugLines = false;
-
+		for(int i = 0; i < NUMBER_OF_ARROWS_TO_SPAWN; i++)
+		{
+			Vehicle vehicle = Instantiate<Vehicle>(arrowPrefab);
+			vehicles.Add(vehicle);
+		}
 	}
 	
 	// Update is called once per frame
@@ -26,8 +29,23 @@ public class AgentManager : MonoBehaviour {
 		if(Input.GetKeyDown(KeyCode.D)){
 			drawDebugLines = !drawDebugLines;
 		}
+		foreach (Vehicle vehicle in vehicles)
+		{
+			//Vector3 seekForce = vehicle.Seek(MousePos());
+			Vector3 seperateForce = vehicle.Seperate(vehicles);
+			Vector3 alignForce = vehicle.Align(vehicles);
+			Vector3 cohesionForce = vehicle.Cohesion(vehicles);
 
-		CallSeekOnPosition(vehicle, MousePos());
+			seperateForce *= SEPERATE_MULTIPLIER;
+			alignForce *= ALIGN_MODIFIER;
+			cohesionForce *= COHESION_MULTIPLIER;
+			//seekForce *= SEEK_MULTIPLIER;
+
+			vehicle.ApplyForce(seperateForce);
+			vehicle.ApplyForce(alignForce);
+			vehicle.ApplyForce(cohesionForce);
+			//vehicle.ApplyForce(seekForce);
+		}
 		/*
 		// Do function calls to seek or flee for all vehicles
 		foreach (GameObject human in humans) {
@@ -108,44 +126,6 @@ public class AgentManager : MonoBehaviour {
 		return v;
 	}
 
-
-
-	/// <summary>
-	/// Call functions related to the calculations
-	/// needed for the vehicle to seek
-	/// </summary>
-	private void CallSeek(Vehicle vehicleComponent) {
-		Vector3 targetPosition = vehicleComponent.seekTarget.transform.position;
-		Vector3 steer = vehicleComponent.Seek( targetPosition );
-		vehicleComponent.ApplyForce(steer);
-
-
-		// Check if need to update waypoint
-		if(Vector3.Distance(vehicleComponent.transform.position, targetPosition) < 2 && vehicleComponent.seekTarget.tag == "target") {
-			vehicleComponent.seekTarget.transform.position = new Vector3(Random.Range(-9.0f, 9.0f), targetPosition.y, Random.Range(-9.0f, 9.0f));
-		}
-	}
-
-	/// <summary>
-	/// Call functions related to the calculations
-	/// needed for the vehicle to seek to get to the specified position
-	/// </summary>
-	private void CallSeekOnPosition(Vehicle vehicleComponent, Vector3 position) {
-		Vector3 steer = vehicleComponent.Seek( position );
-		vehicleComponent.ApplyForce(steer);
-
-	}
-
-	/// <summary>
-	/// Call functions related to the calculations
-	/// needed for the vehicle to flee
-	/// </summary>
-	private void CallFlee(Vehicle vehicleComponent) {
-		Vector3 targetPosition = vehicleComponent.fleeTarget.transform.position;
-		Vector3 steer = vehicleComponent.Flee( targetPosition );
-		vehicleComponent.ApplyForce(steer);
-	}
-
 	/*
 	/// <summary>
 	/// Call functions related to the calculations
@@ -159,51 +139,42 @@ public class AgentManager : MonoBehaviour {
 		}
 	}*/
 
-	/// <summary>
-	/// Call functions related to the calculations
-	/// needed for the vehicle to pursue its target
-	/// </summary>
-	private void CallPursue(Vehicle vehicleComponent) {
-		if (Vector3.Distance (vehicleComponent.position, vehicleComponent.seekTarget.transform.position) > 3) {
-			// If you arer a good distance from your target, keep pursuing them
-			Vector3 targetPosition = vehicleComponent.seekTarget.transform.position;
-			Vector3 targetVelocity = (vehicleComponent.seekTarget.GetComponent(typeof(Vehicle)) as Vehicle).velocity;
-			Vector3 steer = vehicleComponent.Persue (targetPosition, targetVelocity);
-			vehicleComponent.ApplyForce (steer);
-		} else {
-			// else go to your target's position
-			CallSeek(vehicleComponent);
-		}
-			
-	}
-
-	/// <summary>
-	/// Call functions related to the calculations
-	/// needed for the vehicle to flee
-	/// </summary>
-	private void CallEvade(Vehicle vehicleComponent) {
-		Vector3 targetPosition = vehicleComponent.fleeTarget.transform.position;
-		Vehicle targetVehicle = vehicleComponent.fleeTarget.GetComponent(typeof(Vehicle)) as Vehicle;
-		Vector3 targetVelocity = targetVehicle.velocity;
-		Vector3 steer = vehicleComponent.Evade( targetPosition, targetVelocity);
-		vehicleComponent.ApplyForce(steer);
-	}
 
 	/// <summary>
 	/// Call functions related to the calculations
 	/// needed for the vehicle to wander around aimlessly
 	/// </summary>
-	private void CallWander(Vehicle vehicleComponent) {
+	/*private void CallWander(Vehicle vehicleComponent) {
 		Vector3 wanderForce = vehicleComponent.Wander();
 		vehicleComponent.ApplyForce(wanderForce);
-	}
+	}*/
 
 	/// <summary>
 	/// Call functions related to the calculations
 	/// needed for the vehicle to seperate from the vehicleToGetAwayFrom
 	/// </summary>
-	private void CallSeperate(Vehicle vehicleComponent, Vehicle vehicleToGetAwayFrom) {
-		Vector3 seperateForce = vehicleComponent.Seperation(vehicleToGetAwayFrom.transform.position, Vector3.Distance(vehicleComponent.transform.position, vehicleToGetAwayFrom.transform.position));
-		vehicleComponent.ApplyForce(seperateForce);
+	private void CallSeperate(Vehicle vehicleComponent, List<Vehicle> vehicles) {
+		Vector3 sum = Vector3.zero;
+		int count = 0;
+		foreach (Vehicle v in vehicles)
+		{
+			if (v == vehicleComponent)
+			{
+				continue;
+			}
+			else
+			{
+				Vector3 seperateForce = vehicleComponent.Seperation(v.transform.position, Vector3.Distance(vehicleComponent.transform.position, v.transform.position));
+			}
+		}
+		//vehicleComponent.ApplyForce(seperateForce);
+	}
+
+	private void CallFlock(Vehicle vehicleComponent, List<Vehicle> otherVehicles)
+	{
+		foreach(Vehicle other in vehicles)
+		{
+
+		}
 	}
 }

@@ -6,9 +6,10 @@ using UnityEngine;
 public class Vehicle : MonoBehaviour {
 
 	// Public variables that we can tweak in Unity
-	public GameObject seekTarget;
-	public GameObject fleeTarget;
 	public float maxSpeed;
+	public float maxForce;
+	public float desiredSeperation;
+	public float neighborDist;
 	public float mass;
 
 	// Private variables for tracking physics stuff
@@ -16,10 +17,6 @@ public class Vehicle : MonoBehaviour {
 	public Vector3 velocity;
 	public Vector3 position;
 
-	// Weights 
-	public float seekWeight;
-	public float fleeWeight;
-	public float wanderRadius;
 
 	// Variable for how far to look ahead to avoid incoming obsticles
 	public float distanceAhead;
@@ -34,7 +31,6 @@ public class Vehicle : MonoBehaviour {
 	// Used to determine when to set a new wander waypoint
 	public float deltaTime;
 	public float resetAmount;
-	private Vector3 futurePosition;
 
 	// Materials used for debug lines
 	public Material forwardVectorMaterial;
@@ -46,15 +42,13 @@ public class Vehicle : MonoBehaviour {
 		acceleration = Vector3.zero;
 		velocity =  new Vector3(0, 0, 0);
 		position = this.transform.position;
-		seekWeight = 1;
-		fleeWeight = 1;
-		wanderRadius = 2;
 
-		distanceAhead = 5;
+		maxSpeed = 5;
+		maxForce = 0.1f;
+		desiredSeperation = 1;
+		neighborDist = 4;
+		mass = 1.0f;
 
-		persueTimeStep = 1;
-		evadeTimeStep = 1;
-		wanderTimeStep = 5;
 	}
 	
 	// Update is called once per frame
@@ -75,6 +69,17 @@ public class Vehicle : MonoBehaviour {
 	public void ApplyForce(Vector3 force)
 	{
 		this.acceleration += force / this.mass;
+	}
+
+
+	private Vector3 LimitForce(Vector3 force, float maxForce)
+	{
+		if (force.sqrMagnitude > Mathf.Pow(maxForce, 2))
+		{
+			force.Normalize();
+			force *= maxForce;
+		}
+		return force;
 	}
 
 	/// <summary>
@@ -116,6 +121,7 @@ public class Vehicle : MonoBehaviour {
 	/// <returns>The steering force to get to the target</returns>
 	public Vector3 Seek(Vector3 targetPosition)
 	{
+		
 		// Calculate our "perfect" desired velocity
 		Vector3 desiredVelocity = targetPosition - this.transform.position;
 
@@ -127,9 +133,111 @@ public class Vehicle : MonoBehaviour {
 		// the desired velocity?
 		Vector3 steeringForce = desiredVelocity - this.velocity;
 
-		// Add, or multiply more rather, the seekWeight
-		steeringForce *= seekWeight;
+		// Limit force
+		LimitForce(steeringForce, maxForce);
+
 		return steeringForce;
+	}
+
+
+	public Vector3 Seperate(List<Vehicle> vehicles)
+	{
+		int count = 0;
+		Vector3 sum = Vector3.zero;
+		foreach (Vehicle vehicle in vehicles)
+		{
+			if (vehicle == this)
+			{
+				continue;
+			}
+			else
+			{
+				float dist = Vector3.Distance(this.position, vehicle.position);
+				if (dist < desiredSeperation)
+				{
+					Vector3 dir = this.position - vehicle.position;
+					dir.Normalize();
+					sum += dir;
+					count++;
+				}
+			}
+		}
+		if (count > 0)
+		{
+			sum = sum / count;
+		}
+		sum *= maxSpeed;
+		Vector3 steeringForce = sum - velocity;
+		LimitForce(steeringForce, maxForce);
+
+		return steeringForce;
+	}
+
+	public Vector3 Align(List<Vehicle> vehicles)
+	{
+		int count = 0;
+		Vector3 sum = Vector3.zero;
+		foreach (Vehicle vehicle in vehicles)
+		{
+			if (vehicle == this)
+			{
+				continue;
+			}
+			else
+			{
+				float dist = Vector3.Distance(this.position, vehicle.position);
+				if (dist < neighborDist)
+				{
+					sum += vehicle.velocity;
+					count++;
+				}
+			}
+		}
+		if (count > 0)
+		{
+			sum /= count;
+			sum *= maxSpeed;
+
+			Vector3 steeringForce = sum - velocity;
+			LimitForce(steeringForce, maxForce);
+			return steeringForce;
+		}
+		else
+		{
+			return Vector3.zero;
+		}
+	}
+
+
+	public Vector3 Cohesion(List<Vehicle> vehicles)
+	{
+		int count = 0;
+		Vector3 sum = Vector3.zero;
+		foreach (Vehicle vehicle in vehicles)
+		{
+			if (vehicle == this)
+			{
+				continue;
+			}
+			else
+			{
+				float dist = Vector3.Distance(this.position, vehicle.position);
+				if (dist < neighborDist)
+				{
+					sum += vehicle.position;
+					count++;
+				}
+			}
+		}
+		if (count > 0)
+		{
+			sum /= count;
+			return Seek(sum);
+		}
+		else
+		{
+			return Vector3.zero;
+		}
 	}
 
 	/// <summary>
@@ -139,54 +247,19 @@ public class Vehicle : MonoBehaviour {
 	/// <param name="position">Current location of the target</param>
 	/// <param name="vel">Current velocity of the target</param>
 	/// <returns>The steering force to get to the target's position in persueTimestep seconds</returns>
-	public Vector3 Persue(Vector3 position, Vector3 vel) {
+	/*public Vector3 Persue(Vector3 position, Vector3 vel) {
 		
 		Vector3 futurePos = seekTarget.transform.position + vel * persueTimeStep;
 		Debug.Log (futurePos);
 		return Seek(futurePos);
-	}
-
-	/// <summary>
-	/// Calculate a steering force such that it
-	/// allows us to flee in the opposite direction
-	///  of a target position
-	/// </summary>
-	/// <param name="targetPosition">Where to seek</param>
-	/// <returns>The steering force to get away from the target</returns>
-	public Vector3 Flee(Vector3 targetPosition) {
-		// Calculate our "perfect" desired velocity
-		Vector3 desiredVelocity = targetPosition - this.transform.position;
-
-		// Limit desired velocity by max speed
-		desiredVelocity.Normalize();
-		desiredVelocity *= -maxSpeed;
-
-		// How do we turn to start moving towards
-		// the desired velocity?
-		Vector3 steeringForce = desiredVelocity - this.velocity;
-		steeringForce *= fleeWeight;
-		return steeringForce;
-	}
-
-	/// <summary>
-	/// Calculate a steering force such that it
-	/// allows us to flee a target's future position
-	/// </summary>
-	/// <param name="position">Current location of the target</param>
-	/// <param name="vel">Current velocity of the target</param>
-	/// <returns>The steering force to get get away from the target's position in persueTimestep seconds</returns>
-	public Vector3 Evade(Vector3 position, Vector3 vel) {
-
-		Vector3 futurePos = fleeTarget.transform.position + vel * evadeTimeStep;
-		return Flee(futurePos);
-	}
+	}*/
 
 	/// <summary>
 	/// Calculate a steering force such that it
 	/// pushes the vehicle in a random direction in front of it
 	/// </summary>
 	/// <returns>The steering force to a random direction in front of the wanderer</returns>
-	public Vector3 Wander() {
+	/*public Vector3 Wander() {
 		
 		if (deltaTime <=0 ) {
 			Debug.Log("reset");
@@ -201,7 +274,7 @@ public class Vehicle : MonoBehaviour {
 			deltaTime -= Time.deltaTime;
 		}
 		return Seek(futurePosition);
-	}
+	}*/
 
 
 	/// <summary>

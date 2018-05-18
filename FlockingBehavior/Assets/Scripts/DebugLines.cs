@@ -31,14 +31,6 @@ public class DebugLines : MonoBehaviour {
 			GL.Vertex(vehicleComponent.position);
 			GL.Vertex(vehicleComponent.position + this.transform.forward);
 			GL.End();
-
-			if(vehicleComponent.seekTarget != null) {
-				vehicleComponent.targetVectorMaterial.SetPass(0);
-				GL.Begin(GL.LINES);
-				GL.Vertex(vehicleComponent.position);
-				GL.Vertex(vehicleComponent.seekTarget.transform.position);
-				GL.End();
-			}
 		}
 	}
 }
