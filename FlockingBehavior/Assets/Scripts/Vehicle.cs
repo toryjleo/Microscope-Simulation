@@ -4,6 +4,14 @@ using UnityEngine;
 
 // Vehicle is a class that is attached to a gameobject that implements various autonomous agent properties
 public class Vehicle : MonoBehaviour {
+	private const float  WIDTH_TO_WRAP = 11.25f;
+	private const float HEIGHT_TO_WRAP = 6.25f;
+
+
+	private float northBounds;
+	private float southBounds;
+	private float eastBounds;
+	private float westBounds;
 
 	// Public variables that we can tweak in Unity
 	public float maxSpeed;
@@ -18,36 +26,31 @@ public class Vehicle : MonoBehaviour {
 	public Vector3 position;
 
 
-	// Variable for how far to look ahead to avoid incoming obsticles
-	public float distanceAhead;
-	public float radius;
-
-	// Timesteps
-	public float persueTimeStep;
-	public float evadeTimeStep;
-	public float wanderTimeStep;
-
-
-	// Used to determine when to set a new wander waypoint
-	public float deltaTime;
-	public float resetAmount;
-
 	// Materials used for debug lines
 	public Material forwardVectorMaterial;
 	public Material rightVectorMaterial;
 	public Material targetVectorMaterial;
 
 	// Use this for initialization
-	public virtual void Start () {
+	public virtual void Start ()
+	{
+		Vector2 middleScreen = Camera.main.transform.position;
+
+		northBounds = middleScreen.y + HEIGHT_TO_WRAP;
+		southBounds = middleScreen.y - HEIGHT_TO_WRAP;
+		eastBounds = middleScreen.x + WIDTH_TO_WRAP;
+		westBounds = middleScreen.x - WIDTH_TO_WRAP;
+
 		acceleration = Vector3.zero;
 		velocity =  new Vector3(0, 0, 0);
 		position = this.transform.position;
 
-		maxSpeed = 5;
+		maxSpeed = 4;
 		maxForce = 0.1f;
 		desiredSeperation = 1;
-		neighborDist = 4;
+		neighborDist = 50;
 		mass = 1.0f;
+
 
 	}
 	
@@ -106,12 +109,39 @@ public class Vehicle : MonoBehaviour {
 
 		position += velocity * Time.deltaTime;
 
+
+		position = ClampPositionInBounds(position);
 		// Throw the position back to Unity
 		this.transform.position = position;
 
 		// We're done with forces for this frame
 		acceleration = Vector3.zero;
 	}
+
+
+	private Vector3 ClampPositionInBounds(Vector3 position)
+	{
+		if (position.y > northBounds)
+		{
+			position.y = southBounds + (position.y - northBounds);
+		}
+		else if (position.y < southBounds)
+		{
+			position.y = northBounds - (position.y - southBounds);
+		}
+
+		if (position.x > eastBounds)
+		{
+			position.x = westBounds + (position.x - eastBounds);
+		}
+		else if (position.x < westBounds)
+		{
+			position.x = eastBounds - (position.x - westBounds);
+		}
+
+		return position;
+	}
+
 
 	/// <summary>
 	/// Calculate a steering force such that it
@@ -172,6 +202,7 @@ public class Vehicle : MonoBehaviour {
 
 		return steeringForce;
 	}
+
 
 	public Vector3 Align(List<Vehicle> vehicles)
 	{
@@ -239,42 +270,6 @@ public class Vehicle : MonoBehaviour {
 			return Vector3.zero;
 		}
 	}
-
-	/// <summary>
-	/// Calculate a steering force such that it
-	/// allows us to seek a target's future position
-	/// </summary>
-	/// <param name="position">Current location of the target</param>
-	/// <param name="vel">Current velocity of the target</param>
-	/// <returns>The steering force to get to the target's position in persueTimestep seconds</returns>
-	/*public Vector3 Persue(Vector3 position, Vector3 vel) {
-		
-		Vector3 futurePos = seekTarget.transform.position + vel * persueTimeStep;
-		Debug.Log (futurePos);
-		return Seek(futurePos);
-	}*/
-
-	/// <summary>
-	/// Calculate a steering force such that it
-	/// pushes the vehicle in a random direction in front of it
-	/// </summary>
-	/// <returns>The steering force to a random direction in front of the wanderer</returns>
-	/*public Vector3 Wander() {
-		
-		if (deltaTime <=0 ) {
-			Debug.Log("reset");
-			Vector3 randomOffset = new Vector3(Random.Range(-1, 1), 0, Random.Range(-1,1));
-			randomOffset.Normalize();
-			randomOffset *= wanderRadius;
-			futurePosition = position + (velocity * wanderTimeStep);
-			futurePosition += randomOffset;
-			deltaTime = Random.Range(1,resetAmount);
-		} else {
-			Debug.Log(deltaTime);
-			deltaTime -= Time.deltaTime;
-		}
-		return Seek(futurePosition);
-	}*/
 
 
 	/// <summary>
