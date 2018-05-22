@@ -2,9 +2,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Class used to manage the human and zombie objects in the scene
+/// <summary>
+/// Class used to spawn, manage, and update the Vehicle objects
+/// </summary>
 public class AgentManager : MonoBehaviour {
+
+	/// <summary>
+	/// Prefab of a vehicle to spawn
+	/// </summary>
 	public Vehicle arrowPrefab;
+	/// <summary>
+	/// Used to keep track of 
+	/// </summary>
 	public List<Vehicle> vehicles;
 	private const int NUMBER_OF_ARROWS_TO_SPAWN = 100;
 
@@ -17,13 +26,15 @@ public class AgentManager : MonoBehaviour {
 	private const float SEEK_MULTIPLIER = 1;
 
 	public bool drawDebugLines;
-	// Use this for initialization
+
+
+	/// <summary>
+	/// Randomly spawns NUMBER_OF_ARROWS_TO_SPAWN arrows and adds them to the vehicles list
+	/// </summary>
 	void Start () {
 		drawDebugLines = false;
 		for(int i = 0; i < NUMBER_OF_ARROWS_TO_SPAWN; i++)
 		{
-			/*Vector3 spawnPosition = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width / 2, Screen.height / 2, Camera.main.nearClipPlane));
-			spawnPosition = new Vector3(spawnPosition.x + 1 / (i + 1), spawnPosition.y + 1 / (i + 1), 0);*/
 			float spawnY = Random.Range
 				(Camera.main.ScreenToWorldPoint(new Vector2(0, 0)).y, Camera.main.ScreenToWorldPoint(new Vector2(0, Screen.height)).y);
 			float spawnX = Random.Range
@@ -31,6 +42,7 @@ public class AgentManager : MonoBehaviour {
 
 			Vector2 spawnPosition = new Vector2(spawnX, spawnY);
 			Vehicle vehicle = Instantiate<Vehicle>(arrowPrefab, spawnPosition, Quaternion.identity);
+			vehicle.Init();
 			vehicles.Add(vehicle);
 		}
 	}
@@ -42,9 +54,14 @@ public class AgentManager : MonoBehaviour {
 		if(Input.GetKeyDown(KeyCode.D)){
 			drawDebugLines = !drawDebugLines;
 		}
-		CallFlock(vehicles);
+		CallFlock();
 	}
 
+
+	/// <summary>
+	/// Returns a Vector3 representing the current location of the mouse in world space
+	/// </summary>
+	/// <returns></returns>
 	private Vector3 MousePos()
 	{
 		Vector3 v = Input.mousePosition;
@@ -53,27 +70,13 @@ public class AgentManager : MonoBehaviour {
 		return v;
 	}
 
-	/// <summary>
-	/// Call functions related to the calculations
-	/// needed for the vehicle to seperate from the vehicleToGetAwayFrom
-	/// </summary>
-	private void CallSeperate(Vehicle vehicleComponent, List<Vehicle> vehicles) {
-		Vector3 sum = Vector3.zero;
-		int count = 0;
-		foreach (Vehicle v in vehicles)
-		{
-			if (v == vehicleComponent)
-			{
-				continue;
-			}
-			else
-			{
-				Vector3 seperateForce = vehicleComponent.Seperation(v.transform.position, Vector3.Distance(vehicleComponent.transform.position, v.transform.position));
-			}
-		}
-	}
 
-	private void CallFlock(List<Vehicle> otherVehicles)
+	/// <summary>
+	/// Gets a seperate, align, and cohesion force, multiplies them by their respective force multipliers, and applies
+	/// those forces to all members of the vehicles list. It then goes through and finalizes the movement for all members
+	/// of the vehicles list.
+	/// </summary>
+	private void CallFlock()
 	{
 		foreach(Vehicle vehicle in vehicles)
 		{
@@ -88,6 +91,12 @@ public class AgentManager : MonoBehaviour {
 			vehicle.ApplyForce(seperateForce);
 			vehicle.ApplyForce(alignForce);
 			vehicle.ApplyForce(cohesionForce);
+		}
+
+		// Finalize movement
+		foreach(Vehicle vehicle in vehicles)
+		{
+			vehicle.FinalizeMovement();
 		}
 	}
 }
