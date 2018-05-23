@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Threading;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -21,7 +22,7 @@ public class AgentManager : MonoBehaviour {
 	/// Force multipliers
 	/// </summary>
 	private const float SEPERATE_MULTIPLIER = 2f;
-	private const float ALIGN_MODIFIER = 1.5f;
+	private const float ALIGN_MULTIPLIER = 1.5f;
 	private const float COHESION_MULTIPLIER = 1;
 	private const float SEEK_MULTIPLIER = 1;
 
@@ -49,12 +50,29 @@ public class AgentManager : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+		Thread[] threads = new Thread[NUMBER_OF_ARROWS_TO_SPAWN];
 
+		// Call Flock
+		for(int i = 0; i < NUMBER_OF_ARROWS_TO_SPAWN; i++)
+		{
+			// vehicle.CallFlock(vehicles, SEPERATE_MULTIPLIER, ALIGN_MULTIPLIER, COHESION_MULTIPLIER);
+			threads[i] = new Thread(() => vehicles[i].CallFlock(vehicles, SEPERATE_MULTIPLIER, ALIGN_MULTIPLIER, COHESION_MULTIPLIER));
+			threads[i].Start();
+		}
+		for (int i = 0; i < NUMBER_OF_ARROWS_TO_SPAWN; i++)
+		{
+			threads[i].Join();
+		}
+
+
+		foreach (Vehicle vehicle in vehicles)
+		{
+			vehicle.FinalizeMovement();
+		}
 		// Turn debug lines on/off
-		if(Input.GetKeyDown(KeyCode.D)){
+		if (Input.GetKeyDown(KeyCode.D)){
 			drawDebugLines = !drawDebugLines;
 		}
-		CallFlock();
 	}
 
 
@@ -78,6 +96,7 @@ public class AgentManager : MonoBehaviour {
 	/// </summary>
 	private void CallFlock()
 	{
+
 		foreach(Vehicle vehicle in vehicles)
 		{
 			Vector3 seperateForce = vehicle.Seperate(vehicles);
@@ -85,7 +104,7 @@ public class AgentManager : MonoBehaviour {
 			Vector3 cohesionForce = vehicle.Cohesion(vehicles);
 
 			seperateForce *= SEPERATE_MULTIPLIER;
-			alignForce *= ALIGN_MODIFIER;
+			alignForce *= ALIGN_MULTIPLIER;
 			cohesionForce *= COHESION_MULTIPLIER;
 
 			vehicle.ApplyForce(seperateForce);

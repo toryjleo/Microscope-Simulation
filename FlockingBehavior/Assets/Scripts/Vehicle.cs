@@ -127,6 +127,25 @@ public class Vehicle : MonoBehaviour {
 	}
 
 
+	public void CallFlock(List<Vehicle> vehicles, float seperateMultiplier, float alignMultiplier, float cohesionMultiplier)
+	{
+
+		
+		Vector3 seperateForce = Seperate(vehicles);
+		Vector3 alignForce = Align(vehicles);
+		Vector3 cohesionForce = Cohesion(vehicles);
+
+		seperateForce *= seperateMultiplier;
+		alignForce *= alignMultiplier;
+		cohesionForce *= cohesionMultiplier;
+
+		ApplyForce(seperateForce);
+		ApplyForce(alignForce);
+		ApplyForce(cohesionForce);
+		
+	}
+
+
 	/// <summary>
 	/// Kind of a crude solution, but get the vehicle to show up on the opposite side if it goes out of bounds
 	/// </summary>
@@ -163,7 +182,7 @@ public class Vehicle : MonoBehaviour {
 	/// <returns>The steering force to get to the target</returns>
 	public Vector3 Seek(Vector3 targetPosition)
 	{
-		Vector3 desiredVelocity = targetPosition - this.transform.position;
+		Vector3 desiredVelocity = targetPosition - this.position;
 		desiredVelocity.Normalize();
 		desiredVelocity *= MAX_SPEED;
 		Vector3 steeringForce = desiredVelocity - this.velocity;
