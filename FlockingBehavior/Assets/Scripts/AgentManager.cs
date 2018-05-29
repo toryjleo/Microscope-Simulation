@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Diagnostics;
 
 /// <summary>
 /// Class used to spawn, manage, and update the Vehicle objects
@@ -13,10 +14,13 @@ public class AgentManager : MonoBehaviour {
 	/// </summary>
 	public Vehicle arrowPrefab;
 	/// <summary>
-	/// Used to keep track of 
+	/// Used to keep track of vehicles
 	/// </summary>
 	public List<Vehicle> vehicles;
+
+
 	private const int NUMBER_OF_ARROWS_TO_SPAWN = 100;
+	private const int NUMBER_OF_THREADS = 4;
 
 	/// <summary>
 	/// Force multipliers
@@ -28,6 +32,9 @@ public class AgentManager : MonoBehaviour {
 
 	public bool drawDebugLines;
 
+
+	float totalMs = 0;
+	int iterations = 0;
 
 	/// <summary>
 	/// Randomly spawns NUMBER_OF_ARROWS_TO_SPAWN arrows and adds them to the vehicles list
@@ -50,20 +57,32 @@ public class AgentManager : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		Thread[] threads = new Thread[NUMBER_OF_ARROWS_TO_SPAWN];
+		Thread[] threads = new Thread[NUMBER_OF_THREADS];
+
+		int subArrayLen = NUMBER_OF_ARROWS_TO_SPAWN / NUMBER_OF_THREADS;
+
+		Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
+		iterations++;
 
 		// Call Flock
-		for(int i = 0; i < NUMBER_OF_ARROWS_TO_SPAWN; i++)
+		for (int i = 0; i < NUMBER_OF_THREADS; i++)
 		{
-			// vehicle.CallFlock(vehicles, SEPERATE_MULTIPLIER, ALIGN_MULTIPLIER, COHESION_MULTIPLIER);
-			threads[i] = new Thread(() => vehicles[i].CallFlock(vehicles, SEPERATE_MULTIPLIER, ALIGN_MULTIPLIER, COHESION_MULTIPLIER));
+			// threads[i] = new Thread(() => vehicles[i].CallFlock(vehicles, SEPERATE_MULTIPLIER, ALIGN_MULTIPLIER, COHESION_MULTIPLIER));
+			List<Vehicle> subList = vehicles.GetRange(i * subArrayLen, subArrayLen);
+			if (i == NUMBER_OF_THREADS - 1)
+			{
+				subList = vehicles.GetRange(i * subArrayLen, vehicles.Count - (i * subArrayLen));
+			}
+			threads[i] = new Thread(() => CallFlock(subList));
 			threads[i].Start();
 		}
-		for (int i = 0; i < NUMBER_OF_ARROWS_TO_SPAWN; i++)
+		for (int i = 0; i < NUMBER_OF_THREADS; i++)
 		{
 			threads[i].Join();
 		}
-
+		watch.Stop();
+		totalMs += watch.ElapsedMilliseconds;
+		UnityEngine.Debug.Log("Average iteration time: " + totalMs / iterations);
 
 		foreach (Vehicle vehicle in vehicles)
 		{
@@ -94,28 +113,12 @@ public class AgentManager : MonoBehaviour {
 	/// those forces to all members of the vehicles list. It then goes through and finalizes the movement for all members
 	/// of the vehicles list.
 	/// </summary>
-	private void CallFlock()
+	private void CallFlock(List<Vehicle> vehicleList)
 	{
 
-		foreach(Vehicle vehicle in vehicles)
+		foreach(Vehicle vehicle in vehicleList)
 		{
-			Vector3 seperateForce = vehicle.Seperate(vehicles);
-			Vector3 alignForce = vehicle.Align(vehicles);
-			Vector3 cohesionForce = vehicle.Cohesion(vehicles);
-
-			seperateForce *= SEPERATE_MULTIPLIER;
-			alignForce *= ALIGN_MULTIPLIER;
-			cohesionForce *= COHESION_MULTIPLIER;
-
-			vehicle.ApplyForce(seperateForce);
-			vehicle.ApplyForce(alignForce);
-			vehicle.ApplyForce(cohesionForce);
-		}
-
-		// Finalize movement
-		foreach(Vehicle vehicle in vehicles)
-		{
-			vehicle.FinalizeMovement();
+			vehicle.CallFlock(vehicles, SEPERATE_MULTIPLIER, ALIGN_MULTIPLIER, COHESION_MULTIPLIER);
 		}
 	}
 }

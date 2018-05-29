@@ -37,6 +37,9 @@ public class Vehicle : MonoBehaviour {
 	/// </summary>
 	private float furthestNeighbor;
 
+
+	private float spriteHeight;
+
 	/// <summary>
 	/// Variables for tracking physics related stuff
 	/// </summary>
@@ -63,12 +66,15 @@ public class Vehicle : MonoBehaviour {
 		eastBounds = middleScreen.x + WIDTH_TO_WRAP;
 		westBounds = middleScreen.x - WIDTH_TO_WRAP;
 
+
+		SpriteRenderer sprite = gameObject.GetComponent<SpriteRenderer>();
+		spriteHeight = sprite.size.y;
 		acceleration = Vector3.zero;
 		velocity =  new Vector3(0, 0, 0);
 		position = this.transform.position;
 
-		desiredSeperation = 1;
-		furthestNeighbor = 50;
+		desiredSeperation = 1.5f * spriteHeight;
+		furthestNeighbor = 10;
 	}
 
 
