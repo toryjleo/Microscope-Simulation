@@ -33,9 +33,6 @@ public class AgentManager : MonoBehaviour {
 	public bool drawDebugLines;
 
 
-	float totalMs = 0;
-	int iterations = 0;
-
 	/// <summary>
 	/// Randomly spawns NUMBER_OF_ARROWS_TO_SPAWN arrows and adds them to the vehicles list
 	/// </summary>
@@ -57,32 +54,32 @@ public class AgentManager : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		Thread[] threads = new Thread[NUMBER_OF_THREADS];
-
 		int subArrayLen = NUMBER_OF_ARROWS_TO_SPAWN / NUMBER_OF_THREADS;
-
-		Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
-		iterations++;
+		Thread[] threads = new Thread[NUMBER_OF_THREADS];
 
 		// Call Flock
 		for (int i = 0; i < NUMBER_OF_THREADS; i++)
 		{
-			// threads[i] = new Thread(() => vehicles[i].CallFlock(vehicles, SEPERATE_MULTIPLIER, ALIGN_MULTIPLIER, COHESION_MULTIPLIER));
-			List<Vehicle> subList = vehicles.GetRange(i * subArrayLen, subArrayLen);
+			// List of vehicles to pass to the thread
+			List<Vehicle> subList;
+			// If this is the last thread to spin up, it will handle the remainder of the vehicles
 			if (i == NUMBER_OF_THREADS - 1)
 			{
 				subList = vehicles.GetRange(i * subArrayLen, vehicles.Count - (i * subArrayLen));
 			}
-			threads[i] = new Thread(() => CallFlock(subList));
+			else
+			{
+				subList = vehicles.GetRange(i * subArrayLen, subArrayLen);
+			}
+			// Spin up that thread
+			threads[i] = new Thread(() => CallFlock(subList, vehicles, SEPERATE_MULTIPLIER, ALIGN_MULTIPLIER, 
+				COHESION_MULTIPLIER));
 			threads[i].Start();
 		}
 		for (int i = 0; i < NUMBER_OF_THREADS; i++)
 		{
 			threads[i].Join();
 		}
-		watch.Stop();
-		totalMs += watch.ElapsedMilliseconds;
-		UnityEngine.Debug.Log("Average iteration time: " + totalMs / iterations);
 
 		foreach (Vehicle vehicle in vehicles)
 		{
@@ -109,16 +106,18 @@ public class AgentManager : MonoBehaviour {
 
 
 	/// <summary>
-	/// Gets a seperate, align, and cohesion force, multiplies them by their respective force multipliers, and applies
-	/// those forces to all members of the vehicles list. It then goes through and finalizes the movement for all members
-	/// of the vehicles list.
+	/// Calls Flock() for all members of vehicleList
 	/// </summary>
-	private void CallFlock(List<Vehicle> vehicleList)
+	/// <param name="vehicleList">List of vehicles to call Flock() on</param>
+	/// <param name="others">List of all the vehicles</param>
+	/// <param name="sperateMultiplier">Multiplier for the sperate force</param>
+	/// <param name="alignMultiplier">Multiplier for the align force</param>
+	/// <param name="cohesionMultiplier">Multiplier for the cohesion force</param>
+	private void CallFlock(List<Vehicle> vehicleList, List<Vehicle> others, float sperateMultiplier, float alignMultiplier, float cohesionMultiplier)
 	{
-
 		foreach(Vehicle vehicle in vehicleList)
 		{
-			vehicle.CallFlock(vehicles, SEPERATE_MULTIPLIER, ALIGN_MULTIPLIER, COHESION_MULTIPLIER);
+			vehicle.CallFlock(others, sperateMultiplier, alignMultiplier, cohesionMultiplier);
 		}
 	}
 }
