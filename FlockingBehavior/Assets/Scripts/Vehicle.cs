@@ -73,7 +73,7 @@ public class Vehicle : MonoBehaviour {
 		velocity =  new Vector3(0, 0, 0);
 		position = this.transform.position;
 
-		desiredSeperation = 1.5f * spriteHeight;
+		desiredSeperation = 1.25f * spriteHeight;
 		furthestNeighbor = 10;
 	}
 
@@ -135,8 +135,6 @@ public class Vehicle : MonoBehaviour {
 
 	public void CallFlock(List<Vehicle> vehicles, float seperateMultiplier, float alignMultiplier, float cohesionMultiplier)
 	{
-
-		
 		Vector3 seperateForce = Seperate(vehicles);
 		Vector3 alignForce = Align(vehicles);
 		Vector3 cohesionForce = Cohesion(vehicles);

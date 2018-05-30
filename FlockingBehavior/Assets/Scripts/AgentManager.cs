@@ -27,7 +27,7 @@ public class AgentManager : MonoBehaviour {
 	/// </summary>
 	private const float SEPERATE_MULTIPLIER = 2f;
 	private const float ALIGN_MULTIPLIER = 1.5f;
-	private const float COHESION_MULTIPLIER = 1;
+	private const float COHESION_MULTIPLIER = 0.5f;
 	private const float SEEK_MULTIPLIER = 1;
 
 	public bool drawDebugLines;
@@ -86,7 +86,8 @@ public class AgentManager : MonoBehaviour {
 			vehicle.FinalizeMovement();
 		}
 		// Turn debug lines on/off
-		if (Input.GetKeyDown(KeyCode.D)){
+		if (Input.GetKeyDown(KeyCode.D))
+		{
 			drawDebugLines = !drawDebugLines;
 		}
 	}
