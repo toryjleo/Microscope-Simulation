@@ -18,9 +18,18 @@ public class AgentManager : MonoBehaviour {
 	/// </summary>
 	public List<Vehicle> vehicles;
 
+	public Renderer backgroundRenderer;
+
 
 	private const int NUMBER_OF_ARROWS_TO_SPAWN = 100;
 	private const int NUMBER_OF_THREADS = 4;
+
+	private const float MAX_CELL_RADIUS_SIZE = 5.5f;
+	private const float MIN_CELL_RADIUS_SIZE = 0.2f;
+	private const float CELL_GROWTH_RATE = 1.0f;
+
+
+	private float currentCellRadius = MIN_CELL_RADIUS_SIZE;
 
 	/// <summary>
 	/// Force multipliers
@@ -30,14 +39,11 @@ public class AgentManager : MonoBehaviour {
 	private const float COHESION_MULTIPLIER = 0.5f;
 	private const float SEEK_MULTIPLIER = 1;
 
-	public bool drawDebugLines;
-
 
 	/// <summary>
 	/// Randomly spawns NUMBER_OF_ARROWS_TO_SPAWN arrows and adds them to the vehicles list
 	/// </summary>
 	void Start () {
-		drawDebugLines = false;
 		for(int i = 0; i < NUMBER_OF_ARROWS_TO_SPAWN; i++)
 		{
 			float spawnY = Random.Range
@@ -54,6 +60,9 @@ public class AgentManager : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+		Vector3 mousePos = MousePosWorldSpace();
+		UpdateShader();
+
 		int subArrayLen = NUMBER_OF_ARROWS_TO_SPAWN / NUMBER_OF_THREADS;
 		Thread[] threads = new Thread[NUMBER_OF_THREADS];
 
@@ -72,7 +81,7 @@ public class AgentManager : MonoBehaviour {
 				subList = vehicles.GetRange(i * subArrayLen, subArrayLen);
 			}
 			// Spin up that thread
-			threads[i] = new Thread(() => CallFlock(subList, vehicles, SEPERATE_MULTIPLIER, ALIGN_MULTIPLIER, 
+			threads[i] = new Thread(() => CallFlock(subList, vehicles, mousePos, SEPERATE_MULTIPLIER, ALIGN_MULTIPLIER, 
 				COHESION_MULTIPLIER));
 			threads[i].Start();
 		}
@@ -85,19 +94,42 @@ public class AgentManager : MonoBehaviour {
 		{
 			vehicle.FinalizeMovement();
 		}
-		// Turn debug lines on/off
-		if (Input.GetKeyDown(KeyCode.D))
+	}
+
+
+	private void UpdateShader()
+	{
+		if (backgroundRenderer != null && backgroundRenderer.material.shader != null)
 		{
-			drawDebugLines = !drawDebugLines;
+			// Update Mouse Position
+			Vector3 mousePos = MousePosScreenSpace();
+			backgroundRenderer.material.SetVector("_MousePos", new Vector2(mousePos.x, mousePos.y));
+			// Update Radius around mouse
+			if (Input.GetMouseButton(1))
+			{
+				currentCellRadius += CELL_GROWTH_RATE * Time.deltaTime;
+			}
+			else
+			{
+				currentCellRadius -= CELL_GROWTH_RATE * Time.deltaTime;
+			}
+			currentCellRadius = Mathf.Clamp(currentCellRadius, MIN_CELL_RADIUS_SIZE, MAX_CELL_RADIUS_SIZE);
+			backgroundRenderer.material.SetFloat("_MouseRadius", currentCellRadius);
 		}
 	}
 
+
+	private Vector3 MousePosScreenSpace()
+	{
+		Vector3 v = Input.mousePosition;
+		return v;
+	}
 
 	/// <summary>
 	/// Returns a Vector3 representing the current location of the mouse in world space
 	/// </summary>
 	/// <returns></returns>
-	private Vector3 MousePos()
+	private Vector3 MousePosWorldSpace()
 	{
 		Vector3 v = Input.mousePosition;
 		v.z = 10.0f;
@@ -114,11 +146,12 @@ public class AgentManager : MonoBehaviour {
 	/// <param name="sperateMultiplier">Multiplier for the sperate force</param>
 	/// <param name="alignMultiplier">Multiplier for the align force</param>
 	/// <param name="cohesionMultiplier">Multiplier for the cohesion force</param>
-	private void CallFlock(List<Vehicle> vehicleList, List<Vehicle> others, float sperateMultiplier, float alignMultiplier, float cohesionMultiplier)
+	private void CallFlock(List<Vehicle> vehicleList, List<Vehicle> others, Vector3 mousePos, float sperateMultiplier, float alignMultiplier, float cohesionMultiplier)
 	{
 		foreach(Vehicle vehicle in vehicleList)
 		{
 			vehicle.CallFlock(others, sperateMultiplier, alignMultiplier, cohesionMultiplier);
+			vehicle.CallAvoid(mousePos, 10, currentCellRadius / 2);
 		}
 	}
 }

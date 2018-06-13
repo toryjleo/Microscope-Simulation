@@ -37,7 +37,6 @@ public class Vehicle : MonoBehaviour {
 	/// </summary>
 	private float furthestNeighbor;
 
-
 	private float spriteHeight;
 
 	/// <summary>
@@ -135,7 +134,7 @@ public class Vehicle : MonoBehaviour {
 
 	public void CallFlock(List<Vehicle> vehicles, float seperateMultiplier, float alignMultiplier, float cohesionMultiplier)
 	{
-		Vector3 seperateForce = Seperate(vehicles);
+		Vector3 seperateForce = Avoid(vehicles);
 		Vector3 alignForce = Align(vehicles);
 		Vector3 cohesionForce = Cohesion(vehicles);
 
@@ -146,7 +145,18 @@ public class Vehicle : MonoBehaviour {
 		ApplyForce(seperateForce);
 		ApplyForce(alignForce);
 		ApplyForce(cohesionForce);
-		
+	}
+
+
+	public void CallAvoid(Vector3 obstacle, float avoidMultiplier, float maxDist)
+	{
+		float distSquared = Vector3.SqrMagnitude(obstacle - this.position);
+		if (distSquared < Mathf.Pow(maxDist, 2))
+		{
+			Vector3 avoidForce = Avoid(obstacle);
+			avoidForce *= avoidMultiplier;
+			ApplyForce(avoidForce);
+		}
 	}
 
 
@@ -201,7 +211,7 @@ public class Vehicle : MonoBehaviour {
 	/// </summary>
 	/// <param name="vehicles">A list of vehicles to move away from</param>
 	/// <returns>A force that is the average vector that pushes this vehicle away from all the other vehicles</returns>
-	public Vector3 Seperate(List<Vehicle> vehicles)
+	public Vector3 Avoid(List<Vehicle> vehicles)
 	{
 		int count = 0;
 		Vector3 sum = Vector3.zero;
@@ -231,6 +241,17 @@ public class Vehicle : MonoBehaviour {
 		Vector3 steeringForce = sum - velocity;
 		LimitForce(steeringForce, MAX_FORCE);
 
+		return steeringForce;
+	}
+
+
+	public Vector3 Avoid(Vector3 obstacle)
+	{
+		Vector3 dir = this.position - obstacle;
+		dir.Normalize();
+		dir *= MAX_SPEED;
+		Vector3 steeringForce = dir - velocity;
+		LimitForce(steeringForce, MAX_FORCE);
 		return steeringForce;
 	}
 
