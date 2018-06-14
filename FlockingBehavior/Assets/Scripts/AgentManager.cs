@@ -35,9 +35,10 @@ public class AgentManager : MonoBehaviour {
 	/// Force multipliers
 	/// </summary>
 	private const float SEPERATE_MULTIPLIER = 2f;
-	private const float ALIGN_MULTIPLIER = 1.5f;
+	private const float ALIGN_MULTIPLIER = 1.75f;
 	private const float COHESION_MULTIPLIER = 0.5f;
-	private const float SEEK_MULTIPLIER = 1;
+	private const float SEEK_MULTIPLIER = 1.0f;
+	private const float AVOID_CELL_MULTIPLIER = 10f;
 
 
 	/// <summary>
@@ -58,9 +59,11 @@ public class AgentManager : MonoBehaviour {
 		}
 	}
 	
+
 	// Update is called once per frame
 	void Update () {
 		Vector3 mousePos = MousePosWorldSpace();
+		bool rightMouseBtnDown = Input.GetMouseButton(1);
 		UpdateShader();
 
 		int subArrayLen = NUMBER_OF_ARROWS_TO_SPAWN / NUMBER_OF_THREADS;
@@ -82,7 +85,7 @@ public class AgentManager : MonoBehaviour {
 			}
 			// Spin up that thread
 			threads[i] = new Thread(() => CallFlock(subList, vehicles, mousePos, SEPERATE_MULTIPLIER, ALIGN_MULTIPLIER, 
-				COHESION_MULTIPLIER));
+				COHESION_MULTIPLIER, AVOID_CELL_MULTIPLIER, rightMouseBtnDown));
 			threads[i].Start();
 		}
 		for (int i = 0; i < NUMBER_OF_THREADS; i++)
@@ -125,6 +128,7 @@ public class AgentManager : MonoBehaviour {
 		return v;
 	}
 
+
 	/// <summary>
 	/// Returns a Vector3 representing the current location of the mouse in world space
 	/// </summary>
@@ -146,12 +150,16 @@ public class AgentManager : MonoBehaviour {
 	/// <param name="sperateMultiplier">Multiplier for the sperate force</param>
 	/// <param name="alignMultiplier">Multiplier for the align force</param>
 	/// <param name="cohesionMultiplier">Multiplier for the cohesion force</param>
-	private void CallFlock(List<Vehicle> vehicleList, List<Vehicle> others, Vector3 mousePos, float sperateMultiplier, float alignMultiplier, float cohesionMultiplier)
+	private void CallFlock(List<Vehicle> vehicleList, List<Vehicle> others, Vector3 mousePos, float sperateMultiplier, float alignMultiplier, float cohesionMultiplier, float avoidCellMultiplier, bool rightMouseBtnDown)
 	{
-		foreach(Vehicle vehicle in vehicleList)
+		float maxDistFromMouse = currentCellRadius / 2;
+		foreach (Vehicle vehicle in vehicleList)
 		{
 			vehicle.CallFlock(others, sperateMultiplier, alignMultiplier, cohesionMultiplier);
-			vehicle.CallAvoid(mousePos, 10, currentCellRadius / 2);
+			if (rightMouseBtnDown)
+			{
+				vehicle.CallAvoid(mousePos, avoidCellMultiplier, maxDistFromMouse);
+			}
 		}
 	}
 }

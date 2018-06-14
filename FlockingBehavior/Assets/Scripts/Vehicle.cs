@@ -72,8 +72,8 @@ public class Vehicle : MonoBehaviour {
 		velocity =  new Vector3(0, 0, 0);
 		position = this.transform.position;
 
-		desiredSeperation = 1.25f * spriteHeight;
-		furthestNeighbor = 10;
+		desiredSeperation = 1.5f * spriteHeight;
+		furthestNeighbor = 2.5f;
 	}
 
 
@@ -155,6 +155,7 @@ public class Vehicle : MonoBehaviour {
 		{
 			Vector3 avoidForce = Avoid(obstacle);
 			avoidForce *= avoidMultiplier;
+			avoidForce *= 1 / (obstacle - this.position).magnitude;
 			ApplyForce(avoidForce);
 		}
 	}
@@ -228,6 +229,7 @@ public class Vehicle : MonoBehaviour {
 				{
 					Vector3 dir = this.position - vehicle.position;
 					dir.Normalize();
+					dir *= 1 / (this.position - vehicle.position).magnitude;
 					sum += dir;
 					count++;
 				}
