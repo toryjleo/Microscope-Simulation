@@ -224,8 +224,8 @@ public class Vehicle : MonoBehaviour {
 			}
 			else
 			{
-				float dist = Vector3.Distance(this.position, vehicle.position);
-				if (dist < desiredSeperation)
+				float sqrDist = Vector3.SqrMagnitude(this.position - vehicle.position);
+				if (sqrDist < Mathf.Pow(desiredSeperation, 2))
 				{
 					Vector3 dir = this.position - vehicle.position;
 					dir.Normalize();
@@ -275,8 +275,8 @@ public class Vehicle : MonoBehaviour {
 			}
 			else
 			{
-				float dist = Vector3.Distance(this.position, vehicle.position);
-				if (dist < furthestNeighbor)
+				float sqrDist = Vector3.SqrMagnitude(this.position - vehicle.position);
+				if (sqrDist < Mathf.Pow(furthestNeighbor, 2))
 				{
 					sum += vehicle.velocity;
 					count++;
@@ -316,8 +316,8 @@ public class Vehicle : MonoBehaviour {
 			}
 			else
 			{
-				float dist = Vector3.Distance(this.position, vehicle.position);
-				if (dist < furthestNeighbor)
+				float sqrDist = Vector3.SqrMagnitude(this.position - vehicle.position);
+				if (sqrDist < Mathf.Pow(furthestNeighbor, 2))
 				{
 					sum += vehicle.position;
 					count++;
