@@ -5,15 +5,26 @@ using UnityEngine;
 public class MainCamera : MonoBehaviour
 {
 
-	private Material CRTMaterial;
+	public Material CRTMaterial;
+	private bool useCRT = true;
 
-	private void Awake()
+	private void Update()
 	{
-		CRTMaterial = new Material(Shader.Find("Custom/CRTShader"));
+		if (Input.GetKeyDown(KeyCode.Space))
+		{
+			useCRT = !useCRT;
+		}
 	}
 
 	void OnRenderImage(RenderTexture source, RenderTexture destination)
 	{
-		Graphics.Blit(source, destination, CRTMaterial);
+		if (useCRT)
+		{
+			Graphics.Blit(source, destination, CRTMaterial);
+		}
+		else
+		{
+			Graphics.Blit(source, destination);
+		}
 	}
 }
