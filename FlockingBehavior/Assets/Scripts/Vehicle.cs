@@ -103,6 +103,7 @@ public class Vehicle : MonoBehaviour {
 		return force;
 	}
 
+
 	/// <summary>
 	/// Internally handles the overall movement of the vehicle object
 	/// </summary>
@@ -131,7 +132,14 @@ public class Vehicle : MonoBehaviour {
 		acceleration = Vector3.zero;
 	}
 
-
+	/// <summary>
+	/// Makes all relevant calls to apply a seperate force, align force, and a cohesion force which are the behaviors
+	/// needed for a flocking algorithm
+	/// </summary>
+	/// <param name="vehicles">A list of references to other vehicle objects</param>
+	/// <param name="seperateMultiplier">A scalar to multiply the seperate force by</param>
+	/// <param name="alignMultiplier">A scalar to multiply the align force by</param>
+	/// <param name="cohesionMultiplier">A scalar to multiply the cohesion force by</param>
 	public void CallFlock(List<Vehicle> vehicles, float seperateMultiplier, float alignMultiplier, float cohesionMultiplier)
 	{
 		Vector3 seperateForce = Avoid(vehicles);
@@ -148,14 +156,21 @@ public class Vehicle : MonoBehaviour {
 	}
 
 
-	public void CallAvoid(Vector3 obstacle, float avoidMultiplier, float maxDist)
+	/// <summary>
+	/// If within a maxDist from the obstacle, try to move in the opposite direction of it.
+	/// </summary>
+	/// <param name="obstaclePosition">An object to avoid</param>
+	/// <param name="avoidMultiplier">A scalar which will make this force a higher priority, the larger it is</param>
+	/// <param name="maxDist">The maximum distance between this object's and the obstacle's position, for this force to 
+	/// be applied</param>
+	public void CallAvoid(Vector3 obstaclePosition, float avoidMultiplier, float maxDist)
 	{
-		float distSquared = Vector3.SqrMagnitude(obstacle - this.position);
+		float distSquared = Vector3.SqrMagnitude(obstaclePosition - this.position);
 		if (distSquared < Mathf.Pow(maxDist, 2))
 		{
-			Vector3 avoidForce = Avoid(obstacle);
+			Vector3 avoidForce = Avoid(obstaclePosition);
 			avoidForce *= avoidMultiplier;
-			avoidForce *= 1 / (obstacle - this.position).magnitude;
+			avoidForce *= 1 / (obstaclePosition - this.position).magnitude;
 			ApplyForce(avoidForce);
 		}
 	}
@@ -246,10 +261,14 @@ public class Vehicle : MonoBehaviour {
 		return steeringForce;
 	}
 
-
-	public Vector3 Avoid(Vector3 obstacle)
+	/// <summary>
+	/// This will return a vector that will be ideal force to apply to get away from the passed in obstacle's position
+	/// </summary>
+	/// <param name="obstaclePosition">The position of the obstacle to avoid</param>
+	/// <returns>A vector that pointing from obstaclePosition to this objects position</returns>
+	public Vector3 Avoid(Vector3 obstaclePosition)
 	{
-		Vector3 dir = this.position - obstacle;
+		Vector3 dir = this.position - obstaclePosition;
 		dir.Normalize();
 		dir *= MAX_SPEED;
 		Vector3 steeringForce = dir - velocity;

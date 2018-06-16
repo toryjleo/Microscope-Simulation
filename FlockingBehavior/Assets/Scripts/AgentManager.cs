@@ -21,7 +21,7 @@ public class AgentManager : MonoBehaviour {
 	private const int RIGHT_MOUSE_BTN = 1;
 	private const float MAX_CELL_RADIUS_SIZE = 5.5f;
 	private const float MIN_CELL_RADIUS_SIZE = 0.2f;
-	private const float CELL_GROWTH_RATE = 1.0f;
+	private const float CELL_GROWTH_RATE = 5.0f;
 
 	/// <summary>
 	/// Force multipliers
