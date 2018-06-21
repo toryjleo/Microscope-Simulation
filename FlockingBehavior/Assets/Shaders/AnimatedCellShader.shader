@@ -58,7 +58,7 @@
 	half4 frag(v2f i) : SV_Target
 	{
 		// Initialize the color
-		float3 color = _Color;
+		float4 color = _Color;
 		// Normalize the coordinates
 		float2 normalizedCoords = i.vertex.xy / _ScreenParams.xy;
 		// Takes care of a wider aspect ratio
@@ -101,9 +101,10 @@
 		float2 diff = (i_mst + f_mst) - (i_st + f_st);
 		float dist = length(diff);
 		// Color the cell that follows the mouse
-		color.r += 1 - smoothstep(minDist, minDist + _MouseRadius, dist);
+		color.rgb += 1 - smoothstep(minDist, minDist + _MouseRadius, dist);
 
 		minDist = min(minDist, dist);
+		minDist += 1 - smoothstep(minDist, minDist + _MouseRadius, dist);
 
 		// Draw the min distance (distance field)
 		color *= minDist;
