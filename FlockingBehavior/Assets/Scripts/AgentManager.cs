@@ -13,6 +13,7 @@ public class AgentManager : MonoBehaviour {
 	/// Consts for threading
 	/// </summary>
 	private const int NUMBER_OF_ARROWS_TO_SPAWN = 100;
+	private const int NUMBER_OF_WHITE_CELLS_TO_SPAWN = 1;
 	private const int NUMBER_OF_THREADS = 4;
 
 	/// <summary>
@@ -20,27 +21,37 @@ public class AgentManager : MonoBehaviour {
 	/// </summary>
 	private const int RIGHT_MOUSE_BTN = 1;
 	private const float MAX_CELL_RADIUS_SIZE = 5.5f;
-	private const float MIN_CELL_RADIUS_SIZE = 0.2f;
+	private const float MIN_CELL_RADIUS_SIZE = 0.5f;
 	private const float CELL_GROWTH_RATE = 5.0f;
 
 	/// <summary>
-	/// Force multipliers
+	/// Force multipliers for Viruses
 	/// </summary>
-	private const float SEPERATE_MULTIPLIER = 2f;
-	private const float ALIGN_MULTIPLIER = 1.75f;
-	private const float COHESION_MULTIPLIER = 0.5f;
-	private const float SEEK_MULTIPLIER = 1.0f;
-	private const float AVOID_CELL_MULTIPLIER = 10f;
+	private const float VIRUS_SEPERATE_MULTIPLIER = 2f;
+	private const float VIRUS_ALIGN_MULTIPLIER = 1.75f;
+	private const float VIRUS_COHESION_MULTIPLIER = 0.5f;
+	private const float VIRUS_SEEK_MULTIPLIER = 1.0f;
+	private const float VIRUS_AVOID_CELL_MULTIPLIER = 10f;
+	private const float MAX_DISTANCE_FROM_WHITE_CELL = 1.5f;
+
+	/// <summary>
+	/// Force multipliers for White Cells
+	/// </summary>
+	private const float WHITE_CELL_SEEK_MULTIPLIER = 1.0f;
 
 	/// <summary>
 	/// Prefab of a vehicle to spawn
 	/// </summary>
 	public Vehicle arrowPrefab;
 
+	public WhiteCell whiteCellPrefab;
+
 	/// <summary>
 	/// Used to keep track of vehicles
 	/// </summary>
 	public List<Vehicle> vehicles;
+
+	public List<WhiteCell> whiteCells;
 
 	/// <summary>
 	/// Reference to the white background's renderer. Used to set the background's shader's unifroms
@@ -74,6 +85,19 @@ public class AgentManager : MonoBehaviour {
 			vehicle.Init();
 			vehicles.Add(vehicle);
 		}
+
+		for (int i = 0; i < NUMBER_OF_WHITE_CELLS_TO_SPAWN; i++)
+		{
+			float spawnY = Random.Range
+				(Camera.main.ScreenToWorldPoint(new Vector2(0, 0)).y, Camera.main.ScreenToWorldPoint(new Vector2(0, Screen.height)).y);
+			float spawnX = Random.Range
+				(Camera.main.ScreenToWorldPoint(new Vector2(0, 0)).x, Camera.main.ScreenToWorldPoint(new Vector2(Screen.width, 0)).x);
+
+			Vector2 spawnPosition = new Vector2(spawnX, spawnY);
+			WhiteCell whiteCell = Instantiate<WhiteCell>(whiteCellPrefab, spawnPosition, Quaternion.identity);
+			whiteCell.Init();
+			whiteCells.Add(whiteCell);
+		}
 	}
 	
 
@@ -90,7 +114,7 @@ public class AgentManager : MonoBehaviour {
 
 		idleThreadNumber = 0;
 
-		// Call Flock
+		// Call Flock for the Viruses
 		for (int i = 0; i < NUMBER_OF_THREADS; i++)
 		{
 			// List of vehicles to pass to the thread
@@ -105,8 +129,8 @@ public class AgentManager : MonoBehaviour {
 				subList = vehicles.GetRange(i * subArrayLen, subArrayLen);
 			}
 			// Spin up that thread
-			threads[i] = new Thread(() => CallFlock(subList, vehicles, mousePos, SEPERATE_MULTIPLIER, ALIGN_MULTIPLIER, 
-				COHESION_MULTIPLIER, AVOID_CELL_MULTIPLIER, rightMouseBtnDown));
+			threads[i] = new Thread(() => CallFlock(subList, vehicles, VIRUS_SEPERATE_MULTIPLIER, VIRUS_ALIGN_MULTIPLIER, 
+				VIRUS_COHESION_MULTIPLIER, VIRUS_AVOID_CELL_MULTIPLIER));
 			threads[i].Start();
 		}
 		for (int i = 0; i < NUMBER_OF_THREADS; i++)
@@ -114,9 +138,20 @@ public class AgentManager : MonoBehaviour {
 			threads[i].Join();
 		}
 
+		// Call Seek for the WhiteCells
+		foreach (WhiteCell cell in whiteCells)
+		{
+			cell.CallChase(vehicles, WHITE_CELL_SEEK_MULTIPLIER);
+		}
+
 		foreach (Vehicle vehicle in vehicles)
 		{
 			vehicle.FinalizeMovement();
+		}
+
+		foreach (WhiteCell cell in whiteCells)
+		{
+			cell.FinalizeMovement();
 		}
 	}
 
@@ -178,23 +213,21 @@ public class AgentManager : MonoBehaviour {
 	/// </summary>
 	/// <param name="vehicleList">List of vehicles to call Flock() on</param>
 	/// <param name="others">List of all the vehicles</param>
-	/// <param name="mousePos">The cpprdinates of the mouse in world space</param>
 	/// <param name="sperateMultiplier">Multiplier for the sperate force</param>
 	/// <param name="alignMultiplier">Multiplier for the align force</param>
 	/// <param name="cohesionMultiplier">Multiplier for the cohesion force</param>
 	/// <param name="avoidCellMultiplier">Multiplier for the force that steers the vehicle away from the red cell</param>
-	/// <param name="rightMouseBtnDown">Whether or not the right mouse button is currently being held down</param>
-	private void CallFlock(List<Vehicle> vehicleList, List<Vehicle> others, Vector3 mousePos, float sperateMultiplier,
-		float alignMultiplier, float cohesionMultiplier, float avoidCellMultiplier, bool rightMouseBtnDown)
+	private void CallFlock(List<Vehicle> vehicleList, List<Vehicle> others, float sperateMultiplier,
+		float alignMultiplier, float cohesionMultiplier, float avoidCellMultiplier)
 	{
-		float maxDistFromMouse = currentCellRadius / 2;
 
 		foreach (Vehicle vehicle in vehicleList)
 		{
 			vehicle.CallFlock(others, sperateMultiplier, alignMultiplier, cohesionMultiplier);
-			if (rightMouseBtnDown)
+
+			foreach (WhiteCell whiteCell in whiteCells)
 			{
-				vehicle.CallAvoid(mousePos, avoidCellMultiplier, maxDistFromMouse);
+				vehicle.CallAvoid(whiteCell.position, avoidCellMultiplier, MAX_DISTANCE_FROM_WHITE_CELL);
 			}
 		}
 	}

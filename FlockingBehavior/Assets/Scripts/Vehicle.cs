@@ -47,13 +47,6 @@ public class Vehicle : MonoBehaviour {
 	public Vector3 position;
 
 	/// <summary>
-	/// Materials used for debug lines (Not currently relevant)
-	/// </summary>
-	public Material forwardVectorMaterial;
-	public Material rightVectorMaterial;
-	public Material targetVectorMaterial;
-
-	/// <summary>
 	/// Used to initialize the member variables of this vehicle
 	/// </summary>
 	public virtual void Init()
@@ -260,6 +253,7 @@ public class Vehicle : MonoBehaviour {
 
 		return steeringForce;
 	}
+
 
 	/// <summary>
 	/// This will return a vector that will be ideal force to apply to get away from the passed in obstacle's position
