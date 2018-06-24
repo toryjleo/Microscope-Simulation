@@ -32,7 +32,7 @@ public class AgentManager : MonoBehaviour {
 	private const float VIRUS_COHESION_MULTIPLIER = 0.5f;
 	private const float VIRUS_SEEK_MULTIPLIER = 1.0f;
 	private const float VIRUS_AVOID_CELL_MULTIPLIER = 10f;
-	private const float MAX_DISTANCE_FROM_WHITE_CELL = 1.5f;
+	private const float MAX_DISTANCE_FROM_WHITE_CELL = 2.5f;
 
 	/// <summary>
 	/// Force multipliers for White Cells
@@ -45,6 +45,8 @@ public class AgentManager : MonoBehaviour {
 	public Vehicle arrowPrefab;
 
 	public WhiteCell whiteCellPrefab;
+
+	public Camera camera;
 
 	/// <summary>
 	/// Used to keep track of vehicles
@@ -103,12 +105,6 @@ public class AgentManager : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update () {
-		UpdateShader();
-
-		// Get status of mouse for the Vehicles
-		Vector3 mousePos = MousePosWorldSpace();
-		bool rightMouseBtnDown = Input.GetMouseButton(RIGHT_MOUSE_BTN);
-
 		int subArrayLen = NUMBER_OF_ARROWS_TO_SPAWN / NUMBER_OF_THREADS;
 		Thread[] threads = new Thread[NUMBER_OF_THREADS];
 
@@ -153,6 +149,7 @@ public class AgentManager : MonoBehaviour {
 		{
 			cell.FinalizeMovement();
 		}
+		UpdateShader();
 	}
 
 
@@ -165,8 +162,8 @@ public class AgentManager : MonoBehaviour {
 		if (backgroundRenderer != null && backgroundRenderer.material.shader != null)
 		{
 			// Update mouse position
-			Vector3 mousePos = MousePosScreenSpace();
-			backgroundRenderer.material.SetVector("_MousePos", new Vector2(mousePos.x, mousePos.y));
+			Vector3 whiteCellPos = camera.WorldToScreenPoint(whiteCells[0].position);
+			backgroundRenderer.material.SetVector("_MousePos", new Vector2(whiteCellPos.x, whiteCellPos.y));
 
 			// Update radius around mouse
 			if (Input.GetMouseButton(RIGHT_MOUSE_BTN))

@@ -54,18 +54,24 @@ Shader "Custom/CRTShader" {
 
 		// Calculate distance from center
 		float2 normalizedCoords = i.vertex.xy / _ScreenParams.xy;
+		// Altering the aspect ratio so that the vignette is a circle
+		normalizedCoords.x *= _ScreenParams.x / _ScreenParams.y;
+		// Moving the now altered coordinates so that the vignette is in the middle
+		normalizedCoords.x -= (_ScreenParams.x / _ScreenParams.y) / 4;
+
 		float2 distFromCent = normalizedCoords - float2(0.5, 0.5);
 		float len = length(distFromCent.xy);
 		// Get the rgb value from the _MainTex
 		half4 col = tex2D(_MainTex, i.uv);
 		// Apply the vignette effect
-		float percentage = 0.8;
-		float softness = 0.4;
+		float radius = .55;
+		float softness = .25;
 		// Make the vignette pulsate
-		percentage -= abs(sin(_Time[1])) / 10;
+		//percentage -= abs(sin(_Time[1])) / 10;
 		// Interpolate the values using a polynomial
-		float sm = smoothstep(percentage, percentage - softness, len);
-		col.rgb = lerp(col.rgb, col.rgb * half3(sm, sm, sm), 0.4);
+		float sm = smoothstep(radius, radius - softness, len);
+		col.rgb *= sm;
+		//col.rgb = lerp(col.rgb, col.rgb * half3(sm, sm, sm), 0.4);
 
 		/// Adds RGB lines going across the screen vertically
 
