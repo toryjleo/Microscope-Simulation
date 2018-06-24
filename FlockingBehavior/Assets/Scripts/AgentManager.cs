@@ -13,7 +13,7 @@ public class AgentManager : MonoBehaviour {
 	/// Consts for threading
 	/// </summary>
 	private const int NUMBER_OF_ARROWS_TO_SPAWN = 100;
-	private const int NUMBER_OF_WHITE_CELLS_TO_SPAWN = 1;
+	private const int NUMBER_OF_WHITE_CELLS_TO_SPAWN = 2;
 	private const int NUMBER_OF_THREADS = 4;
 
 	/// <summary>
@@ -163,7 +163,11 @@ public class AgentManager : MonoBehaviour {
 		{
 			// Update mouse position
 			Vector3 whiteCellPos = camera.WorldToScreenPoint(whiteCells[0].position);
-			backgroundRenderer.material.SetVector("_MousePos", new Vector2(whiteCellPos.x, whiteCellPos.y));
+			backgroundRenderer.material.SetVector("_WhiteCellOne", new Vector2(whiteCellPos.x, whiteCellPos.y));
+
+			whiteCellPos = camera.WorldToScreenPoint(whiteCells[1].position);
+			backgroundRenderer.material.SetVector("_WhiteCellTwo", new Vector2(whiteCellPos.x, whiteCellPos.y));
+
 
 			// Update radius around mouse
 			if (Input.GetMouseButton(RIGHT_MOUSE_BTN))
