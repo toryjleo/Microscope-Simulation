@@ -42,7 +42,7 @@ public class AgentManager : MonoBehaviour {
 	/// <summary>
 	/// Prefab of a vehicle to spawn
 	/// </summary>
-	public Vehicle arrowPrefab;
+	public Boid arrowPrefab;
 
 	public WhiteCell whiteCellPrefab;
 
@@ -51,7 +51,7 @@ public class AgentManager : MonoBehaviour {
 	/// <summary>
 	/// Used to keep track of vehicles
 	/// </summary>
-	public List<Vehicle> vehicles;
+	public List<Boid> vehicles;
 
 	public List<WhiteCell> whiteCells;
 
@@ -64,11 +64,6 @@ public class AgentManager : MonoBehaviour {
 	/// Tracks the current size of the red cell's radius
 	/// </summary>
 	private float currentCellRadius = MIN_CELL_RADIUS_SIZE;
-
-	/// <summary>
-	/// Number of threads sitting idle, waiting for other threads to get to the same point of execution
-	/// </summary>
-	private int idleThreadNumber = 0;
 
 
 	/// <summary>
@@ -83,7 +78,7 @@ public class AgentManager : MonoBehaviour {
 				(Camera.main.ScreenToWorldPoint(new Vector2(0, 0)).x, Camera.main.ScreenToWorldPoint(new Vector2(Screen.width, 0)).x);
 
 			Vector2 spawnPosition = new Vector2(spawnX, spawnY);
-			Vehicle vehicle = Instantiate<Vehicle>(arrowPrefab, spawnPosition, Quaternion.identity);
+			Boid vehicle = Instantiate<Boid>(arrowPrefab, spawnPosition, Quaternion.identity);
 			vehicle.Init();
 			vehicles.Add(vehicle);
 		}
@@ -108,13 +103,11 @@ public class AgentManager : MonoBehaviour {
 		int subArrayLen = NUMBER_OF_ARROWS_TO_SPAWN / NUMBER_OF_THREADS;
 		Thread[] threads = new Thread[NUMBER_OF_THREADS];
 
-		idleThreadNumber = 0;
-
 		// Call Flock for the Viruses
 		for (int i = 0; i < NUMBER_OF_THREADS; i++)
 		{
 			// List of vehicles to pass to the thread
-			List<Vehicle> subList;
+			List<Boid> subList;
 			// If this is the last thread to spin up, it will handle the remainder of the vehicles
 			if (i == NUMBER_OF_THREADS - 1)
 			{
@@ -140,7 +133,7 @@ public class AgentManager : MonoBehaviour {
 			cell.CallChase(vehicles, WHITE_CELL_SEEK_MULTIPLIER);
 		}
 
-		foreach (Vehicle vehicle in vehicles)
+		foreach (Boid vehicle in vehicles)
 		{
 			vehicle.FinalizeMovement();
 		}
@@ -218,11 +211,11 @@ public class AgentManager : MonoBehaviour {
 	/// <param name="alignMultiplier">Multiplier for the align force</param>
 	/// <param name="cohesionMultiplier">Multiplier for the cohesion force</param>
 	/// <param name="avoidCellMultiplier">Multiplier for the force that steers the vehicle away from the red cell</param>
-	private void CallFlock(List<Vehicle> vehicleList, List<Vehicle> others, float sperateMultiplier,
+	private void CallFlock(List<Boid> vehicleList, List<Boid> others, float sperateMultiplier,
 		float alignMultiplier, float cohesionMultiplier, float avoidCellMultiplier)
 	{
 
-		foreach (Vehicle vehicle in vehicleList)
+		foreach (Boid vehicle in vehicleList)
 		{
 			vehicle.CallFlock(others, sperateMultiplier, alignMultiplier, cohesionMultiplier);
 

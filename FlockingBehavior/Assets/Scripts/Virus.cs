@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Virus : Vehicle
+public class Virus : Boid
 {
 	private float spriteHeight;
 
