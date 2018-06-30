@@ -7,7 +7,7 @@ using System.Diagnostics;
 /// <summary>
 /// Class used to spawn, manage, and update the Vehicle objects
 /// </summary>
-public class AgentManager : MonoBehaviour {
+public class BoidManager : MonoBehaviour {
 
 	/// <summary>
 	/// Consts for threading
@@ -42,7 +42,7 @@ public class AgentManager : MonoBehaviour {
 	/// <summary>
 	/// Prefab of a vehicle to spawn
 	/// </summary>
-	public Boid arrowPrefab;
+	public Virus virusPrefab;
 
 	public WhiteCell whiteCellPrefab;
 
@@ -51,7 +51,7 @@ public class AgentManager : MonoBehaviour {
 	/// <summary>
 	/// Used to keep track of vehicles
 	/// </summary>
-	public List<Boid> vehicles;
+	public List<Boid> viruses;
 
 	public List<WhiteCell> whiteCells;
 
@@ -70,6 +70,7 @@ public class AgentManager : MonoBehaviour {
 	/// Randomly spawns NUMBER_OF_ARROWS_TO_SPAWN arrows and adds them to the vehicles list
 	/// </summary>
 	void Start () {
+		// Initialize Viruses
 		for(int i = 0; i < NUMBER_OF_ARROWS_TO_SPAWN; i++)
 		{
 			float spawnY = Random.Range
@@ -78,11 +79,12 @@ public class AgentManager : MonoBehaviour {
 				(Camera.main.ScreenToWorldPoint(new Vector2(0, 0)).x, Camera.main.ScreenToWorldPoint(new Vector2(Screen.width, 0)).x);
 
 			Vector2 spawnPosition = new Vector2(spawnX, spawnY);
-			Boid vehicle = Instantiate<Boid>(arrowPrefab, spawnPosition, Quaternion.identity);
-			vehicle.Init();
-			vehicles.Add(vehicle);
+			Virus virus = Instantiate<Virus>(virusPrefab, spawnPosition, Quaternion.identity);
+			virus.Init();
+			viruses.Add(virus);
 		}
 
+		// Initialize White Cells
 		for (int i = 0; i < NUMBER_OF_WHITE_CELLS_TO_SPAWN; i++)
 		{
 			float spawnY = Random.Range
@@ -111,14 +113,14 @@ public class AgentManager : MonoBehaviour {
 			// If this is the last thread to spin up, it will handle the remainder of the vehicles
 			if (i == NUMBER_OF_THREADS - 1)
 			{
-				subList = vehicles.GetRange(i * subArrayLen, vehicles.Count - (i * subArrayLen));
+				subList = viruses.GetRange(i * subArrayLen, viruses.Count - (i * subArrayLen));
 			}
 			else
 			{
-				subList = vehicles.GetRange(i * subArrayLen, subArrayLen);
+				subList = viruses.GetRange(i * subArrayLen, subArrayLen);
 			}
 			// Spin up that thread
-			threads[i] = new Thread(() => CallFlock(subList, vehicles, VIRUS_SEPERATE_MULTIPLIER, VIRUS_ALIGN_MULTIPLIER, 
+			threads[i] = new Thread(() => CallFlock(subList, viruses, VIRUS_SEPERATE_MULTIPLIER, VIRUS_ALIGN_MULTIPLIER, 
 				VIRUS_COHESION_MULTIPLIER, VIRUS_AVOID_CELL_MULTIPLIER));
 			threads[i].Start();
 		}
@@ -130,10 +132,10 @@ public class AgentManager : MonoBehaviour {
 		// Call Seek for the WhiteCells
 		foreach (WhiteCell cell in whiteCells)
 		{
-			cell.CallChase(vehicles, WHITE_CELL_SEEK_MULTIPLIER);
+			cell.CallChase(viruses as List<Boid>, WHITE_CELL_SEEK_MULTIPLIER);
 		}
 
-		foreach (Boid vehicle in vehicles)
+		foreach (Boid vehicle in viruses)
 		{
 			vehicle.FinalizeMovement();
 		}
@@ -201,27 +203,29 @@ public class AgentManager : MonoBehaviour {
 	}
 
 
-	/// <param name="cohesionMultiplier">Multiplier for the cohesion force</param>
 	/// <summary>
-	/// Calls Flock() for all members of vehicleList
+	/// Calls Flock() for all members of boidList
 	/// </summary>
-	/// <param name="vehicleList">List of vehicles to call Flock() on</param>
-	/// <param name="others">List of all the vehicles</param>
+	/// <param name="boidList">List of boids to call Flock() on. A Subset of others</param>
+	/// <param name="others">List of all the boids</param>
 	/// <param name="sperateMultiplier">Multiplier for the sperate force</param>
 	/// <param name="alignMultiplier">Multiplier for the align force</param>
 	/// <param name="cohesionMultiplier">Multiplier for the cohesion force</param>
 	/// <param name="avoidCellMultiplier">Multiplier for the force that steers the vehicle away from the red cell</param>
-	private void CallFlock(List<Boid> vehicleList, List<Boid> others, float sperateMultiplier,
+	private void CallFlock(List<Boid> boidList, List<Boid> others, float sperateMultiplier,
 		float alignMultiplier, float cohesionMultiplier, float avoidCellMultiplier)
 	{
 
-		foreach (Boid vehicle in vehicleList)
+		foreach (Virus virus in boidList)
 		{
-			vehicle.CallFlock(others, sperateMultiplier, alignMultiplier, cohesionMultiplier);
-
-			foreach (WhiteCell whiteCell in whiteCells)
+			if (virus.IsAlive)
 			{
-				vehicle.CallAvoid(whiteCell.position, avoidCellMultiplier, MAX_DISTANCE_FROM_WHITE_CELL);
+				virus.CallFlock(others, sperateMultiplier, alignMultiplier, cohesionMultiplier);
+
+				foreach (WhiteCell whiteCell in whiteCells)
+				{
+					virus.CallAvoid(whiteCell.position, avoidCellMultiplier, MAX_DISTANCE_FROM_WHITE_CELL);
+				}
 			}
 		}
 	}

@@ -13,11 +13,13 @@ public class Boid : MonoBehaviour {
 	private const float  WIDTH_TO_WRAP = 11.25f;
 	private const float HEIGHT_TO_WRAP = 6.25f;
 
-	public const float MAX_SPEED = 4.0f;
 	public const float MAX_FORCE = 0.1f;
 	public const float MASS = 1.0f;
 
 	#endregion
+
+
+	public float maxSpeed;
 
 	/// <summary>
 	/// Bounds the Boid cannot exceed in the world space
@@ -54,6 +56,8 @@ public class Boid : MonoBehaviour {
 	/// </summary>
 	public virtual void Init()
 	{
+		maxSpeed = 4.0f;
+
 		Vector2 middleScreen = Camera.main.transform.position;
 
 		northBounds = middleScreen.y + HEIGHT_TO_WRAP;
@@ -106,9 +110,9 @@ public class Boid : MonoBehaviour {
 		velocity += acceleration * Time.deltaTime;
 
 		// If the velocity is greater than maxSpeed, set the magnitude = maxSpeed
-		if( Vector3.SqrMagnitude(velocity) > Mathf.Pow(MAX_SPEED, 2)) {
+		if( Vector3.SqrMagnitude(velocity) > Mathf.Pow(maxSpeed, 2)) {
 			velocity.Normalize();
-			velocity *= MAX_SPEED;
+			velocity *= maxSpeed;
 		}
 
 		// Rotate the transform so that the sprite is facing the direction of the velocity
@@ -146,7 +150,7 @@ public class Boid : MonoBehaviour {
 	/// </summary>
 	/// <param name="boids">A list of boids to chase</param>
 	/// <returns>A force in the direction of the closest boid</returns>
-	private Vector3 Chase(List<Boid> boids)
+	protected virtual Vector3 Chase(List<Boid> boids)
 	{
 		Vector3 closestTarget = this.position;
 		// Some arbitrary distance, far away
@@ -247,7 +251,7 @@ public class Boid : MonoBehaviour {
 	{
 		Vector3 desiredVelocity = targetPosition - this.position;
 		desiredVelocity.Normalize();
-		desiredVelocity *= MAX_SPEED;
+		desiredVelocity *= maxSpeed;
 		Vector3 steeringForce = desiredVelocity - this.velocity;
 		// Limit force
 		LimitForce(steeringForce, MAX_FORCE);
@@ -287,7 +291,7 @@ public class Boid : MonoBehaviour {
 		{
 			sum = sum / count;
 		}
-		sum *= MAX_SPEED;
+		sum *= maxSpeed;
 		Vector3 steeringForce = sum - velocity;
 		LimitForce(steeringForce, MAX_FORCE);
 
@@ -304,7 +308,7 @@ public class Boid : MonoBehaviour {
 	{
 		Vector3 dir = this.position - obstaclePosition;
 		dir.Normalize();
-		dir *= MAX_SPEED;
+		dir *= maxSpeed;
 		Vector3 steeringForce = dir - velocity;
 		LimitForce(steeringForce, MAX_FORCE);
 		return steeringForce;
@@ -339,7 +343,7 @@ public class Boid : MonoBehaviour {
 		if (count > 0)
 		{
 			sum /= count;
-			sum *= MAX_SPEED;
+			sum *= maxSpeed;
 
 			Vector3 steeringForce = sum - velocity;
 			LimitForce(steeringForce, MAX_FORCE);
