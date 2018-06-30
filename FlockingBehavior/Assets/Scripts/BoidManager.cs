@@ -13,7 +13,7 @@ public class BoidManager : MonoBehaviour {
 	/// Consts for threading
 	/// </summary>
 	private const int NUMBER_OF_ARROWS_TO_SPAWN = 100;
-	private const int NUMBER_OF_WHITE_CELLS_TO_SPAWN = 2;
+	private const int NUMBER_OF_WHITE_CELLS_TO_SPAWN = 1;
 	private const int NUMBER_OF_THREADS = 4;
 
 	/// <summary>
@@ -54,6 +54,8 @@ public class BoidManager : MonoBehaviour {
 	public List<Boid> viruses;
 
 	public List<WhiteCell> whiteCells;
+
+	public PlayerWhiteCell player;
 
 	/// <summary>
 	/// Reference to the white background's renderer. Used to set the background's shader's unifroms
@@ -97,6 +99,7 @@ public class BoidManager : MonoBehaviour {
 			whiteCell.Init();
 			whiteCells.Add(whiteCell);
 		}
+		player.Init();
 	}
 	
 
@@ -135,6 +138,8 @@ public class BoidManager : MonoBehaviour {
 			cell.CallChase(viruses as List<Boid>, WHITE_CELL_SEEK_MULTIPLIER);
 		}
 
+		player.PlayerInput();
+
 		foreach (Boid vehicle in viruses)
 		{
 			vehicle.FinalizeMovement();
@@ -144,6 +149,9 @@ public class BoidManager : MonoBehaviour {
 		{
 			cell.FinalizeMovement();
 		}
+
+		player.FinalizeMovement();
+
 		UpdateShader();
 	}
 
@@ -160,7 +168,7 @@ public class BoidManager : MonoBehaviour {
 			Vector3 whiteCellPos = camera.WorldToScreenPoint(whiteCells[0].position);
 			backgroundRenderer.material.SetVector("_WhiteCellOne", new Vector2(whiteCellPos.x, whiteCellPos.y));
 
-			whiteCellPos = camera.WorldToScreenPoint(whiteCells[1].position);
+			whiteCellPos = camera.WorldToScreenPoint(player.position);
 			backgroundRenderer.material.SetVector("_WhiteCellTwo", new Vector2(whiteCellPos.x, whiteCellPos.y));
 
 

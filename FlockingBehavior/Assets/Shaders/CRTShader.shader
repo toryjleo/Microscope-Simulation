@@ -4,6 +4,8 @@ Shader "Custom/CRTShader" {
 	Properties
 	{
 		_MainTex("Texture", 2D) = "white" {}
+		_VignetteRadius("VignetteRadius", Float) = .8
+		_VignetteSoftness("VignetteSoftness", Float) = .25
 		_VertsColor("VertsColor", Range(0, 1)) = .7
 		_Br("Brightness", Range(-50, 100)) = 60
 		_Contrast("Contrast", Range(-5, 15)) = -1
@@ -44,6 +46,8 @@ Shader "Custom/CRTShader" {
 	}
 
 	sampler2D _MainTex;
+	float _VignetteRadius;
+	float _VignetteSoftness;
 	float _VertsColor;
 	float _Br;
 	float _Contrast;
@@ -64,8 +68,8 @@ Shader "Custom/CRTShader" {
 		// Get the rgb value from the _MainTex
 		half4 col = tex2D(_MainTex, i.uv);
 		// Apply the vignette effect
-		float radius = .55;
-		float softness = .25;
+		float radius = _VignetteRadius;
+		float softness = _VignetteSoftness;
 		// Make the vignette pulsate
 		//percentage -= abs(sin(_Time[1])) / 10;
 		// Interpolate the values using a polynomial
