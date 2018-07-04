@@ -8,6 +8,12 @@ public class MainCamera : MonoBehaviour
 	public Material CRTMaterial;
 	private bool useCRT = true;
 
+
+	private void Update()
+	{
+		UserInput();
+	}
+
 	void OnRenderImage(RenderTexture source, RenderTexture destination)
 	{
 		if (useCRT)
@@ -23,9 +29,14 @@ public class MainCamera : MonoBehaviour
 
 	private void UserInput()
 	{
-		if (Input.GetKeyDown(KeyCode.Space))
+		// Turns on/off post-processing effects
+		/*if (Input.GetKeyDown(KeyCode.Space))
 		{
 			useCRT = !useCRT;
+		}*/
+		if (Input.GetKeyDown(KeyCode.Escape))
+		{
+			Application.Quit();
 		}
 	}
 }
