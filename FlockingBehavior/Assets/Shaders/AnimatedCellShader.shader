@@ -35,14 +35,16 @@
 	};
 
 	// Uniforms
+
 	sampler2D _MainTex;
 	float4 _WhiteCellOne;
 	float4 _WhiteCellTwo;
 	float4 _Color;
 	float _Scale;
 	float _MouseRadius;
-
 	
+	// Methods
+
 	float2 random2( float2 p) 
 	{
 		return frac(sin(float2(dot(p, float2(127.1, 311.7)), dot(p, float2(269.5, 183.3))))*43758.5453);
@@ -56,6 +58,7 @@
 		o.uv = v.uv;
 		return o;
 	}
+
 
 	half4 frag(v2f i) : SV_Target
 	{
@@ -106,10 +109,9 @@
 			}
 		}
 
-		// Make another cell for the mouse
+		// Make a white cell
 		float2 diff = (i_mst1 + f_mst1) - (i_st + f_st);
 		float dist = length(diff);
-		// Color the cell that follows the mouse
 		color.rgb += 1 - smoothstep(minDist, minDist + _MouseRadius, dist);
 
 		minDist = min(minDist, dist);
@@ -117,10 +119,9 @@
 
 
 
-		// Make another cell for the mouse
+		// Make a white cell (controlled by the player)
 		diff = (i_mst2 + f_mst2) - (i_st + f_st);
 		dist = length(diff);
-		// Color the cell that follows the mouse
 		color.rgb += 1 - smoothstep(minDist, minDist + _MouseRadius, dist);
 
 		minDist = min(minDist, dist);
