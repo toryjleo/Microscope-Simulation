@@ -3,7 +3,8 @@
 	Properties
 	{
 		_MainTex("Texture", 2D) = "white" {}
-		_MousePos("MousePos", Vector) = (1,1,1,1)
+		_WhiteCellOne("WhiteCellOne", Vector) = (1,1,1,1)
+		_WhiteCellTwo("WhiteCellTwo", Vector) = (1,1,1,1)
 		_Color("Color", Color) = (0.2, 0.90980, 0.83529, 1)
 		_Scale("Scale", Float) = 6
 		_MouseRadius("MouseRadius", Float) = 1
@@ -34,13 +35,16 @@
 	};
 
 	// Uniforms
+
 	sampler2D _MainTex;
-	float4 _MousePos;
+	float4 _WhiteCellOne;
+	float4 _WhiteCellTwo;
 	float4 _Color;
 	float _Scale;
 	float _MouseRadius;
-
 	
+	// Methods
+
 	float2 random2( float2 p) 
 	{
 		return frac(sin(float2(dot(p, float2(127.1, 311.7)), dot(p, float2(269.5, 183.3))))*43758.5453);
@@ -55,10 +59,12 @@
 		return o;
 	}
 
+
 	half4 frag(v2f i) : SV_Target
 	{
 		// Initialize the color
-		float3 color = _Color;
+		float4 color = _Color;
+		color.r -= abs(sin(_Time[0] * 8)) / 2;
 		// Normalize the coordinates
 		float2 normalizedCoords = i.vertex.xy / _ScreenParams.xy;
 		// Takes care of a wider aspect ratio
@@ -66,11 +72,17 @@
 		// Scale
 		float2 st = _Scale * normalizedCoords;
 		// Mouse input
-		_MousePos.xy /= _ScreenParams.xy;
-		_MousePos.x *= _ScreenParams.x / _ScreenParams.y;
-		_MousePos.xy = _MousePos.xy * _Scale;
-		float2 i_mst = floor(_MousePos.xy);
-		float2 f_mst = frac(_MousePos.xy);
+		_WhiteCellOne.xy /= _ScreenParams.xy;
+		_WhiteCellOne.x *= _ScreenParams.x / _ScreenParams.y;
+		_WhiteCellOne.xy = _WhiteCellOne.xy * _Scale;
+		float2 i_mst1 = floor(_WhiteCellOne.xy);
+		float2 f_mst1 = frac(_WhiteCellOne.xy);
+
+		_WhiteCellTwo.xy /= _ScreenParams.xy;
+		_WhiteCellTwo.x *= _ScreenParams.x / _ScreenParams.y;
+		_WhiteCellTwo.xy = _WhiteCellTwo.xy * _Scale;
+		float2 i_mst2 = floor(_WhiteCellTwo.xy);
+		float2 f_mst2 = frac(_WhiteCellTwo.xy);
 
 		// Tile space
 		float2 i_st = floor(st);
@@ -97,13 +109,24 @@
 			}
 		}
 
-		// Make another cell for the mouse
-		float2 diff = (i_mst + f_mst) - (i_st + f_st);
+		// Make a white cell
+		float2 diff = (i_mst1 + f_mst1) - (i_st + f_st);
 		float dist = length(diff);
-		// Color the cell that follows the mouse
-		color.r += 1 - smoothstep(minDist, minDist + _MouseRadius, dist);
+		color.rgb += 1 - smoothstep(minDist, minDist + _MouseRadius, dist);
 
 		minDist = min(minDist, dist);
+		minDist += 1 - smoothstep(minDist, minDist + _MouseRadius, dist);
+
+
+
+		// Make a white cell (controlled by the player)
+		diff = (i_mst2 + f_mst2) - (i_st + f_st);
+		dist = length(diff);
+		color.rgb += 1 - smoothstep(minDist, minDist + _MouseRadius, dist);
+
+		minDist = min(minDist, dist);
+		minDist += 1 - smoothstep(minDist, minDist + _MouseRadius, dist);
+
 
 		// Draw the min distance (distance field)
 		color *= minDist;

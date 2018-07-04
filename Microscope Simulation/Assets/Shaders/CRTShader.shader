@@ -4,6 +4,8 @@ Shader "Custom/CRTShader" {
 	Properties
 	{
 		_MainTex("Texture", 2D) = "white" {}
+		_VignetteRadius("VignetteRadius", Float) = .8
+		_VignetteSoftness("VignetteSoftness", Float) = .25
 		_VertsColor("VertsColor", Range(0, 1)) = .7
 		_Br("Brightness", Range(-50, 100)) = 60
 		_Contrast("Contrast", Range(-5, 15)) = -1
@@ -34,6 +36,18 @@ Shader "Custom/CRTShader" {
 		float4 screenPos : TEXCOORD1;
 	};
 
+
+	// Uniforms
+
+	sampler2D _MainTex;
+	float _VignetteRadius;
+	float _VignetteSoftness;
+	float _VertsColor;
+	float _Br;
+	float _Contrast;
+
+	// Methods
+
 	v2f vert(appdata v)
 	{
 		v2f o;
@@ -43,29 +57,31 @@ Shader "Custom/CRTShader" {
 		return o;
 	}
 
-	sampler2D _MainTex;
-	float _VertsColor;
-	float _Br;
-	float _Contrast;
 
 	half4 frag(v2f i) : SV_Target
 	{
-		/// Adds a slight Vignette to the image
+		/// Adds a Vignette to the screen
 
 		// Calculate distance from center
 		float2 normalizedCoords = i.vertex.xy / _ScreenParams.xy;
+		// Altering the aspect ratio so that the vignette is a circle
+		normalizedCoords.x *= _ScreenParams.x / _ScreenParams.y;
+		// Moving the now altered coordinates so that the vignette is in the middle
+		normalizedCoords.x -= (_ScreenParams.x / _ScreenParams.y) / 4;
+
 		float2 distFromCent = normalizedCoords - float2(0.5, 0.5);
 		float len = length(distFromCent.xy);
+
 		// Get the rgb value from the _MainTex
 		half4 col = tex2D(_MainTex, i.uv);
+
 		// Apply the vignette effect
-		float percentage = 0.8;
-		float softness = 0.4;
-		// Make the vignette pulsate
-		percentage -= abs(sin(_Time[1])) / 10;
+		float radius = _VignetteRadius;
+		float softness = _VignetteSoftness;
+
 		// Interpolate the values using a polynomial
-		float sm = smoothstep(percentage, percentage - softness, len);
-		col.rgb = lerp(col.rgb, col.rgb * half3(sm, sm, sm), 0.4);
+		float sm = smoothstep(radius, radius - softness, len);
+		col.rgb *= sm;
 
 		/// Adds RGB lines going across the screen vertically
 

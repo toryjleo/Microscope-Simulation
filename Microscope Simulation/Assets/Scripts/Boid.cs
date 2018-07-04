@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Vehicle is a class that is attached to a gameobject that implements various autonomous agent properties
-public class Vehicle : MonoBehaviour {
+// Boid is a class that is attached to a gameobject that implements various autonomous agent properties
+public class Boid : MonoBehaviour {
 
-	#region Consts
+	#region CONSTS
 
 	/// <summary>
 	/// How far to go fromt he center of the screen before wrapping
@@ -13,14 +13,16 @@ public class Vehicle : MonoBehaviour {
 	private const float  WIDTH_TO_WRAP = 11.25f;
 	private const float HEIGHT_TO_WRAP = 6.25f;
 
-	public const float MAX_SPEED = 4.0f;
 	public const float MAX_FORCE = 0.1f;
 	public const float MASS = 1.0f;
 
 	#endregion
 
+	#region VARIABLES
+	public float maxSpeed;
+
 	/// <summary>
-	/// Bounds the vehicle cannot exceed in the world space
+	/// Bounds the Boid cannot exceed in the world space
 	/// </summary>
 	private float northBounds;
 	private float southBounds;
@@ -28,16 +30,19 @@ public class Vehicle : MonoBehaviour {
 	private float westBounds;
 
 	/// <summary>
-	/// A vehicle's desired distance from its neighbor
+	/// A Boid's desired distance from its neighbor
 	/// </summary>
-	private float desiredSeperation;
+	protected float desiredSeperation;
 
 	/// <summary>
-	/// The max distance for another vehicle to be considered a 'neighbor'
+	/// The max distance for another Boid to be considered a 'neighbor'
 	/// </summary>
 	private float furthestNeighbor;
 
-	private float spriteHeight;
+	/// <summary>
+	/// The furthest away distance another boid can be from this boid, to still be chased
+	/// </summary>
+	protected float furthestToChase;
 
 	/// <summary>
 	/// Variables for tracking physics related stuff
@@ -46,18 +51,17 @@ public class Vehicle : MonoBehaviour {
 	private Vector3 velocity;
 	public Vector3 position;
 
-	/// <summary>
-	/// Materials used for debug lines (Not currently relevant)
-	/// </summary>
-	public Material forwardVectorMaterial;
-	public Material rightVectorMaterial;
-	public Material targetVectorMaterial;
+	#endregion
+
+	#region METHODS
 
 	/// <summary>
-	/// Used to initialize the member variables of this vehicle
+	/// Used to initialize the member variables of this Boid
 	/// </summary>
 	public virtual void Init()
 	{
+		maxSpeed = 4.0f;
+
 		Vector2 middleScreen = Camera.main.transform.position;
 
 		northBounds = middleScreen.y + HEIGHT_TO_WRAP;
@@ -66,13 +70,10 @@ public class Vehicle : MonoBehaviour {
 		westBounds = middleScreen.x - WIDTH_TO_WRAP;
 
 
-		SpriteRenderer sprite = gameObject.GetComponent<SpriteRenderer>();
-		spriteHeight = sprite.size.y;
 		acceleration = Vector3.zero;
 		velocity =  new Vector3(0, 0, 0);
 		position = this.transform.position;
 
-		desiredSeperation = 1.5f * spriteHeight;
 		furthestNeighbor = 2.5f;
 	}
 
@@ -105,7 +106,7 @@ public class Vehicle : MonoBehaviour {
 
 
 	/// <summary>
-	/// Internally handles the overall movement of the vehicle object
+	/// Internally handles the overall movement of the Boid object
 	/// </summary>
 	public void FinalizeMovement()
 	{
@@ -113,9 +114,9 @@ public class Vehicle : MonoBehaviour {
 		velocity += acceleration * Time.deltaTime;
 
 		// If the velocity is greater than maxSpeed, set the magnitude = maxSpeed
-		if( Vector3.SqrMagnitude(velocity) > Mathf.Pow(MAX_SPEED, 2)) {
+		if( Vector3.SqrMagnitude(velocity) > Mathf.Pow(maxSpeed, 2)) {
 			velocity.Normalize();
-			velocity *= MAX_SPEED;
+			velocity *= maxSpeed;
 		}
 
 		// Rotate the transform so that the sprite is facing the direction of the velocity
@@ -132,19 +133,59 @@ public class Vehicle : MonoBehaviour {
 		acceleration = Vector3.zero;
 	}
 
+
+	/// <summary>
+	/// Finds the closest boid in the list and follows it
+	/// </summary>
+	/// <param name="boids">A list of boids to chase</param>
+	/// <param name="chaseMultiplier">A scalar to multiply the chase force by</param>
+	public void CallChase(List<Boid> boids, float chaseMultiplier)
+	{
+		Vector3 chaseForce = Chase(boids);
+
+		chaseForce *= chaseMultiplier;
+
+		ApplyForce(chaseForce);
+	}
+
+
+	/// <summary>
+	/// Returns a force that is directed toward the closest boid in boids
+	/// </summary>
+	/// <param name="boids">A list of boids to chase</param>
+	/// <returns>A force in the direction of the closest boid</returns>
+	protected virtual Vector3 Chase(List<Boid> boids)
+	{
+		Vector3 closestTarget = this.position;
+		// Some arbitrary distance, far away
+		float closestSqrDist = Mathf.Pow(furthestToChase, 2);
+
+		foreach (Boid boid in boids)
+		{
+
+			if (Vector3.SqrMagnitude(this.position - boid.position) < closestSqrDist)
+			{
+				closestSqrDist = Vector3.SqrMagnitude(this.position - boid.position);
+				closestTarget = boid.position;
+			}
+		}
+		return Seek(closestTarget);
+	}
+
+
 	/// <summary>
 	/// Makes all relevant calls to apply a seperate force, align force, and a cohesion force which are the behaviors
 	/// needed for a flocking algorithm
 	/// </summary>
-	/// <param name="vehicles">A list of references to other vehicle objects</param>
+	/// <param name="boids">A list of references to other Boid objects</param>
 	/// <param name="seperateMultiplier">A scalar to multiply the seperate force by</param>
 	/// <param name="alignMultiplier">A scalar to multiply the align force by</param>
 	/// <param name="cohesionMultiplier">A scalar to multiply the cohesion force by</param>
-	public void CallFlock(List<Vehicle> vehicles, float seperateMultiplier, float alignMultiplier, float cohesionMultiplier)
+	public void CallFlock(List<Boid> boids, float seperateMultiplier, float alignMultiplier, float cohesionMultiplier)
 	{
-		Vector3 seperateForce = Avoid(vehicles);
-		Vector3 alignForce = Align(vehicles);
-		Vector3 cohesionForce = Cohesion(vehicles);
+		Vector3 seperateForce = Avoid(boids);
+		Vector3 alignForce = Align(boids);
+		Vector3 cohesionForce = Cohesion(boids);
 
 		seperateForce *= seperateMultiplier;
 		alignForce *= alignMultiplier;
@@ -177,9 +218,9 @@ public class Vehicle : MonoBehaviour {
 
 
 	/// <summary>
-	/// Kind of a crude solution, but get the vehicle to show up on the opposite side if it goes out of bounds
+	/// Kind of a crude solution, but get the Boid to show up on the opposite side if it goes out of bounds
 	/// </summary>
-	/// <param name="position">The current position of the vehicle</param>
+	/// <param name="position">The current position of the Boid</param>
 	/// <returns>A position within the specified bounds</returns>
 	private Vector3 ClampPositionInBounds(Vector3 position)
 	{
@@ -214,7 +255,7 @@ public class Vehicle : MonoBehaviour {
 	{
 		Vector3 desiredVelocity = targetPosition - this.position;
 		desiredVelocity.Normalize();
-		desiredVelocity *= MAX_SPEED;
+		desiredVelocity *= maxSpeed;
 		Vector3 steeringForce = desiredVelocity - this.velocity;
 		// Limit force
 		LimitForce(steeringForce, MAX_FORCE);
@@ -223,28 +264,28 @@ public class Vehicle : MonoBehaviour {
 
 
 	/// <summary>
-	/// Get a force that moves this vehicle away from all the other vehicles
+	/// Get a force that moves this Boid away from all the other boids
 	/// </summary>
-	/// <param name="vehicles">A list of vehicles to move away from</param>
-	/// <returns>A force that is the average vector that pushes this vehicle away from all the other vehicles</returns>
-	public Vector3 Avoid(List<Vehicle> vehicles)
+	/// <param name="boids">A list of boids to move away from</param>
+	/// <returns>A force that is the average vector that pushes this boid away from all the other boids</returns>
+	public Vector3 Avoid(List<Boid> boids)
 	{
 		int count = 0;
 		Vector3 sum = Vector3.zero;
-		foreach (Vehicle vehicle in vehicles)
+		foreach (Boid boid in boids)
 		{
-			if (vehicle == this)
+			if (boid == this)
 			{
 				continue;
 			}
 			else
 			{
-				float sqrDist = Vector3.SqrMagnitude(this.position - vehicle.position);
+				float sqrDist = Vector3.SqrMagnitude(this.position - boid.position);
 				if (sqrDist < Mathf.Pow(desiredSeperation, 2))
 				{
-					Vector3 dir = this.position - vehicle.position;
+					Vector3 dir = this.position - boid.position;
 					dir.Normalize();
-					dir *= 1 / (this.position - vehicle.position).magnitude;
+					dir *= 1 / (this.position - boid.position).magnitude;
 					sum += dir;
 					count++;
 				}
@@ -254,12 +295,13 @@ public class Vehicle : MonoBehaviour {
 		{
 			sum = sum / count;
 		}
-		sum *= MAX_SPEED;
+		sum *= maxSpeed;
 		Vector3 steeringForce = sum - velocity;
 		LimitForce(steeringForce, MAX_FORCE);
 
 		return steeringForce;
 	}
+
 
 	/// <summary>
 	/// This will return a vector that will be ideal force to apply to get away from the passed in obstacle's position
@@ -270,7 +312,7 @@ public class Vehicle : MonoBehaviour {
 	{
 		Vector3 dir = this.position - obstaclePosition;
 		dir.Normalize();
-		dir *= MAX_SPEED;
+		dir *= maxSpeed;
 		Vector3 steeringForce = dir - velocity;
 		LimitForce(steeringForce, MAX_FORCE);
 		return steeringForce;
@@ -278,26 +320,26 @@ public class Vehicle : MonoBehaviour {
 
 
 	/// <summary>
-	/// Get a force that moves this vehicle in the same direction as all the other vehicles
+	/// Get a force that moves this boid in the same direction as all the other boids
 	/// </summary>
-	/// <param name="vehicles">A list of vehicles to try to move in the same direction as</param>
-	/// <returns>A force that is the average vector of all the other vehicles' velocities</returns>
-	public Vector3 Align(List<Vehicle> vehicles)
+	/// <param name="boids">A list of boids to try to move in the same direction as</param>
+	/// <returns>A force that is the average vector of all the other boids' velocities</returns>
+	public Vector3 Align(List<Boid> boids)
 	{
 		int count = 0;
 		Vector3 sum = Vector3.zero;
-		foreach (Vehicle vehicle in vehicles)
+		foreach (Boid boid in boids)
 		{
-			if (vehicle == this)
+			if (boid == this)
 			{
 				continue;
 			}
 			else
 			{
-				float sqrDist = Vector3.SqrMagnitude(this.position - vehicle.position);
+				float sqrDist = Vector3.SqrMagnitude(this.position - boid.position);
 				if (sqrDist < Mathf.Pow(furthestNeighbor, 2))
 				{
-					sum += vehicle.velocity;
+					sum += boid.velocity;
 					count++;
 				}
 			}
@@ -305,7 +347,7 @@ public class Vehicle : MonoBehaviour {
 		if (count > 0)
 		{
 			sum /= count;
-			sum *= MAX_SPEED;
+			sum *= maxSpeed;
 
 			Vector3 steeringForce = sum - velocity;
 			LimitForce(steeringForce, MAX_FORCE);
@@ -319,26 +361,26 @@ public class Vehicle : MonoBehaviour {
 
 
 	/// <summary>
-	/// Get a force that moves this vehicle towards all the other vehicles
+	/// Get a force that moves this boid towards all the other boids
 	/// </summary>
-	/// <param name="vehicles">A list of vehicles to try to move towards</param>
-	/// <returns>A force that is the average vector that pushes this vehicle towards all the other vehicles</returns>
-	public Vector3 Cohesion(List<Vehicle> vehicles)
+	/// <param name="boids">A list of boids to try to move towards</param>
+	/// <returns>A force that is the average vector that pushes this boid towards all the other boids</returns>
+	public Vector3 Cohesion(List<Boid> boids)
 	{
 		int count = 0;
 		Vector3 sum = Vector3.zero;
-		foreach (Vehicle vehicle in vehicles)
+		foreach (Boid boid in boids)
 		{
-			if (vehicle == this)
+			if (boid == this)
 			{
 				continue;
 			}
 			else
 			{
-				float sqrDist = Vector3.SqrMagnitude(this.position - vehicle.position);
+				float sqrDist = Vector3.SqrMagnitude(this.position - boid.position);
 				if (sqrDist < Mathf.Pow(furthestNeighbor, 2))
 				{
-					sum += vehicle.position;
+					sum += boid.position;
 					count++;
 				}
 			}
@@ -353,4 +395,6 @@ public class Vehicle : MonoBehaviour {
 			return Vector3.zero;
 		}
 	}
+
+	#endregion
 }
