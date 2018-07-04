@@ -1,5 +1,7 @@
 # Microscope Simulation
 
+This project is themed around the idea of looking through a microscope at white blood cells attacking viruses.
+
 This project was made in Unity 2017.3.1f1
 
 ## To Run
