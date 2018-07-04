@@ -4,12 +4,18 @@ using UnityEngine;
 
 public class Virus : Boid
 {
+
+	#region VARIABLES
+
 	SpriteRenderer sprite = null;
 
 	private float spriteHeight;
 
 	private bool isAlive;
 
+	#endregion
+
+	#region ACCESSORS
 
 	public bool IsAlive
 	{
@@ -19,7 +25,13 @@ public class Virus : Boid
 		}
 	}
 
+	#endregion
 
+	#region METHODS
+
+	/// <summary>
+	/// Used to initialize member variables of this Virus object
+	/// </summary>
 	public override void Init()
 	{
 		base.Init();
@@ -29,6 +41,10 @@ public class Virus : Boid
 		desiredSeperation = 1.5f * spriteHeight;
 	}
 
+
+	/// <summary>
+	/// Disables the virus object and makes a call to DeathCoroutine
+	/// </summary>
 	public void Die()
 	{
 		isAlive = false;
@@ -39,9 +55,13 @@ public class Virus : Boid
 	}
 
 
+	/// <summary>
+	/// Causes the color of the sprite to darken and fade over time
+	/// </summary>
+	/// <returns></returns>
 	private IEnumerator DeathCoroutine()
 	{
-		while(sprite.color.a > 0)
+		while (sprite.color.a > 0)
 		{
 			Color col = sprite.color;
 			col.a -= .15f;
@@ -53,4 +73,7 @@ public class Virus : Boid
 		}
 		yield return null;
 	}
+
+	#endregion
+
 }

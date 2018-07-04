@@ -5,7 +5,7 @@ using UnityEngine;
 // Boid is a class that is attached to a gameobject that implements various autonomous agent properties
 public class Boid : MonoBehaviour {
 
-	#region Consts
+	#region CONSTS
 
 	/// <summary>
 	/// How far to go fromt he center of the screen before wrapping
@@ -18,7 +18,7 @@ public class Boid : MonoBehaviour {
 
 	#endregion
 
-
+	#region VARIABLES
 	public float maxSpeed;
 
 	/// <summary>
@@ -50,6 +50,10 @@ public class Boid : MonoBehaviour {
 	private Vector3 acceleration;
 	private Vector3 velocity;
 	public Vector3 position;
+
+	#endregion
+
+	#region METHODS
 
 	/// <summary>
 	/// Used to initialize the member variables of this Boid
@@ -391,4 +395,6 @@ public class Boid : MonoBehaviour {
 			return Vector3.zero;
 		}
 	}
+
+	#endregion
 }

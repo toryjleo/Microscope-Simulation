@@ -4,6 +4,12 @@ using UnityEngine;
 
 public class WhiteCell : Boid
 {
+
+	#region METHODS
+
+	/// <summary>
+	/// Used to initialize member variables of this WhiteCell object
+	/// </summary>
 	public override void Init()
 	{
 		maxSpeed = 8.0f;
@@ -11,6 +17,12 @@ public class WhiteCell : Boid
 		base.Init();
 	}
 
+
+	/// <summary>
+	/// If this object collides with a Virus object, it will disable the virus object (consume it) by calling its Die()
+	/// method
+	/// </summary>
+	/// <param name="collision"></param>
 	private void OnTriggerEnter2D(Collider2D collision)
 	{
 		Virus virusComponent = collision.gameObject.GetComponent<Virus>();
@@ -26,7 +38,7 @@ public class WhiteCell : Boid
 	/// <summary>
 	/// Returns a force that is directed toward the closest boid in boids
 	/// </summary>
-	/// <param name="boids">A list of boids to chase</param>
+	/// <param name="boids">A list of boids (of the child class Virus) to chase</param>
 	/// <returns>A force in the direction of the closest boid</returns>
 	protected override Vector3 Chase(List<Boid> boids)
 	{
@@ -45,4 +57,7 @@ public class WhiteCell : Boid
 		}
 		return Seek(closestTarget);
 	}
+
+	#endregion
+
 }

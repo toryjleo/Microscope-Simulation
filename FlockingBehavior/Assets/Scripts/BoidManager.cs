@@ -9,20 +9,14 @@ using System.Diagnostics;
 /// </summary>
 public class BoidManager : MonoBehaviour {
 
+	#region CONSTS
+
 	/// <summary>
 	/// Consts for threading
 	/// </summary>
 	private const int NUMBER_OF_ARROWS_TO_SPAWN = 100;
 	private const int NUMBER_OF_WHITE_CELLS_TO_SPAWN = 1;
 	private const int NUMBER_OF_THREADS = 4;
-
-	/// <summary>
-	/// Consts for the red cell
-	/// </summary>
-	private const int RIGHT_MOUSE_BTN = 1;
-	private const float MAX_CELL_RADIUS_SIZE = 5.5f;
-	private const float MIN_CELL_RADIUS_SIZE = 0.5f;
-	private const float CELL_GROWTH_RATE = 5.0f;
 
 	/// <summary>
 	/// Force multipliers for Viruses
@@ -39,6 +33,10 @@ public class BoidManager : MonoBehaviour {
 	/// </summary>
 	private const float WHITE_CELL_SEEK_MULTIPLIER = 1.0f;
 
+	#endregion
+
+	#region VARIABLES
+
 	/// <summary>
 	/// Prefab of a vehicle to spawn
 	/// </summary>
@@ -46,14 +44,14 @@ public class BoidManager : MonoBehaviour {
 
 	public WhiteCell whiteCellPrefab;
 
-	public Camera camera;
+	public Camera mainCamera;
 
 	/// <summary>
 	/// Used to keep track of vehicles
 	/// </summary>
 	public List<Boid> viruses;
 
-	public List<WhiteCell> whiteCells;
+	public List<Boid> whiteCells;
 
 	public PlayerWhiteCell player;
 
@@ -62,16 +60,15 @@ public class BoidManager : MonoBehaviour {
 	/// </summary>
 	public Renderer backgroundRenderer;
 
-	/// <summary>
-	/// Tracks the current size of the red cell's radius
-	/// </summary>
-	private float currentCellRadius = MIN_CELL_RADIUS_SIZE;
+	#endregion
 
+	#region METHODS
 
 	/// <summary>
 	/// Randomly spawns NUMBER_OF_ARROWS_TO_SPAWN arrows and adds them to the vehicles list
 	/// </summary>
-	void Start () {
+	void Start ()
+	{
 		// Initialize Viruses
 		for(int i = 0; i < NUMBER_OF_ARROWS_TO_SPAWN; i++)
 		{
@@ -99,20 +96,30 @@ public class BoidManager : MonoBehaviour {
 			whiteCell.Init();
 			whiteCells.Add(whiteCell);
 		}
+
+		// Initialize the player controlled WhiteCell
 		player.Init();
 	}
 	
 
 	// Update is called once per frame
-	void Update () {
+	void Update ()
+	{
+		// Initialize a list of all the boids for the viruses to avoid
+		List<Boid> avoidList = new List<Boid>();
+		avoidList.AddRange(whiteCells);
+		avoidList.Add(player);
+
+		// Initialize an array of threads
 		int subArrayLen = NUMBER_OF_ARROWS_TO_SPAWN / NUMBER_OF_THREADS;
 		Thread[] threads = new Thread[NUMBER_OF_THREADS];
 
 		// Call Flock for the Viruses
 		for (int i = 0; i < NUMBER_OF_THREADS; i++)
 		{
-			// List of vehicles to pass to the thread
+			// List of boids to pass to the thread
 			List<Boid> subList;
+
 			// If this is the last thread to spin up, it will handle the remainder of the vehicles
 			if (i == NUMBER_OF_THREADS - 1)
 			{
@@ -122,34 +129,37 @@ public class BoidManager : MonoBehaviour {
 			{
 				subList = viruses.GetRange(i * subArrayLen, subArrayLen);
 			}
+
 			// Spin up that thread
-			threads[i] = new Thread(() => CallFlock(subList, viruses, VIRUS_SEPERATE_MULTIPLIER, VIRUS_ALIGN_MULTIPLIER, 
+			threads[i] = new Thread(() => CallVirusBehaviours(subList, viruses, avoidList, VIRUS_SEPERATE_MULTIPLIER, VIRUS_ALIGN_MULTIPLIER, 
 				VIRUS_COHESION_MULTIPLIER, VIRUS_AVOID_CELL_MULTIPLIER));
 			threads[i].Start();
 		}
+
+		// Wait for threads to finish execution
 		for (int i = 0; i < NUMBER_OF_THREADS; i++)
 		{
 			threads[i].Join();
 		}
 
-		// Call Seek for the WhiteCells
-		foreach (WhiteCell cell in whiteCells)
+		// Call Chase for the WhiteCells
+		foreach (Boid whiteCell in whiteCells)
 		{
-			cell.CallChase(viruses as List<Boid>, WHITE_CELL_SEEK_MULTIPLIER);
+			whiteCell.CallChase(viruses as List<Boid>, WHITE_CELL_SEEK_MULTIPLIER);
 		}
 
+		// Apply forces to the player's controlled whiteCell, based on player input
 		player.PlayerInput();
 
-		foreach (Boid vehicle in viruses)
+		// Finalize the movement of all the boids
+		foreach (Boid virus in viruses)
 		{
-			vehicle.FinalizeMovement();
+			virus.FinalizeMovement();
 		}
-
-		foreach (WhiteCell cell in whiteCells)
+		foreach (Boid whiteCell in whiteCells)
 		{
-			cell.FinalizeMovement();
+			whiteCell.FinalizeMovement();
 		}
-
 		player.FinalizeMovement();
 
 		UpdateShader();
@@ -157,70 +167,35 @@ public class BoidManager : MonoBehaviour {
 
 
 	/// <summary>
-	/// Sets the background shader's uniforms based on user input. Specifically, it gives the "AnimatedCellShader" the 
-	/// current position of the mouse and the radius of the red cell
+	/// Sets the background shader's uniforms based on user input. Specifically, this sets the two WhiteCell position 
+	/// uniforms for the "AnimatedCellShader" 
 	/// </summary>
 	private void UpdateShader()
 	{
 		if (backgroundRenderer != null && backgroundRenderer.material.shader != null)
 		{
-			// Update mouse position
-			Vector3 whiteCellPos = camera.WorldToScreenPoint(whiteCells[0].position);
+			// Update the shader with the one whitecell's position
+			Vector3 whiteCellPos = mainCamera.WorldToScreenPoint(whiteCells[0].position);
 			backgroundRenderer.material.SetVector("_WhiteCellOne", new Vector2(whiteCellPos.x, whiteCellPos.y));
 
-			whiteCellPos = camera.WorldToScreenPoint(player.position);
+			// Update the shader with the one player whitecell's position
+			whiteCellPos = mainCamera.WorldToScreenPoint(player.position);
 			backgroundRenderer.material.SetVector("_WhiteCellTwo", new Vector2(whiteCellPos.x, whiteCellPos.y));
-
-
-			// Update radius around mouse
-			if (Input.GetMouseButton(RIGHT_MOUSE_BTN))
-			{
-				currentCellRadius += CELL_GROWTH_RATE * Time.deltaTime;
-			}
-			else
-			{
-				currentCellRadius -= CELL_GROWTH_RATE * Time.deltaTime;
-			}
-			currentCellRadius = Mathf.Clamp(currentCellRadius, MIN_CELL_RADIUS_SIZE, MAX_CELL_RADIUS_SIZE);
-			backgroundRenderer.material.SetFloat("_MouseRadius", currentCellRadius);
 		}
 	}
 
 
 	/// <summary>
-	/// Returns a Vector3 representing the current location of the mouse in screen space
+	/// Calls CallFlock() and CallAvoid() for all members of boidList
 	/// </summary>
-	/// <returns>A vector3 whose x and y coordinates are the screen space coordinates of the mouse</returns>
-	private Vector3 MousePosScreenSpace()
-	{
-		Vector3 v = Input.mousePosition;
-		return v;
-	}
-
-
-	/// <summary>
-	/// Returns a Vector3 representing the current location of the mouse in world space
-	/// </summary>
-	/// <returns>A vector3 whose x and y coordinates are the world space coordinates of the mouse</returns>
-	private Vector3 MousePosWorldSpace()
-	{
-		Vector3 v = Input.mousePosition;
-		v.z = 10.0f;
-		v = Camera.main.ScreenToWorldPoint(v);
-		return v;
-	}
-
-
-	/// <summary>
-	/// Calls Flock() for all members of boidList
-	/// </summary>
-	/// <param name="boidList">List of boids to call Flock() on. A Subset of others</param>
-	/// <param name="others">List of all the boids</param>
+	/// <param name="boidList">List of boids to apply flocking behaviour to. A Subset of others</param>
+	/// <param name="others">List of all the boids to flock toward</param>
+	/// <param name="avoidList">List of all the boids to avoid making contact with. Should be a list of WhiteCells</param>
 	/// <param name="sperateMultiplier">Multiplier for the sperate force</param>
 	/// <param name="alignMultiplier">Multiplier for the align force</param>
 	/// <param name="cohesionMultiplier">Multiplier for the cohesion force</param>
 	/// <param name="avoidCellMultiplier">Multiplier for the force that steers the vehicle away from the red cell</param>
-	private void CallFlock(List<Boid> boidList, List<Boid> others, float sperateMultiplier,
+	private void CallVirusBehaviours(List<Boid> boidList, List<Boid> others, List<Boid> avoidList, float sperateMultiplier,
 		float alignMultiplier, float cohesionMultiplier, float avoidCellMultiplier)
 	{
 
@@ -230,11 +205,13 @@ public class BoidManager : MonoBehaviour {
 			{
 				virus.CallFlock(others, sperateMultiplier, alignMultiplier, cohesionMultiplier);
 
-				foreach (WhiteCell whiteCell in whiteCells)
+				foreach (Boid whiteCell in avoidList)
 				{
 					virus.CallAvoid(whiteCell.position, avoidCellMultiplier, MAX_DISTANCE_FROM_WHITE_CELL);
 				}
 			}
 		}
 	}
+
+	#endregion
 }

@@ -4,6 +4,12 @@ using UnityEngine;
 
 public class PlayerWhiteCell : WhiteCell
 {
+
+	#region METHODS
+
+	/// <summary>
+	/// Takes player input to move the player left, right, up and down
+	/// </summary>
 	public void PlayerInput()
 	{
 		if (Input.GetKey(KeyCode.W))
@@ -27,4 +33,6 @@ public class PlayerWhiteCell : WhiteCell
 			ApplyForce(seekForce);
 		}
 	}
+
+	#endregion
 }

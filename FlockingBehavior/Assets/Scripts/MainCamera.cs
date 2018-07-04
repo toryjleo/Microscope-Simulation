@@ -8,14 +8,6 @@ public class MainCamera : MonoBehaviour
 	public Material CRTMaterial;
 	private bool useCRT = true;
 
-	private void Update()
-	{
-		if (Input.GetKeyDown(KeyCode.Space))
-		{
-			useCRT = !useCRT;
-		}
-	}
-
 	void OnRenderImage(RenderTexture source, RenderTexture destination)
 	{
 		if (useCRT)
@@ -25,6 +17,15 @@ public class MainCamera : MonoBehaviour
 		else
 		{
 			Graphics.Blit(source, destination);
+		}
+	}
+
+
+	private void UserInput()
+	{
+		if (Input.GetKeyDown(KeyCode.Space))
+		{
+			useCRT = !useCRT;
 		}
 	}
 }
