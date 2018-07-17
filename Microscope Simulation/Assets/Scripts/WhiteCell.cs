@@ -12,9 +12,9 @@ public class WhiteCell : Boid
 	/// </summary>
 	public override void Init()
 	{
-		maxSpeed = 8.0f;
-		furthestToChase = 4.0f;
 		base.Init();
+		maxSpeed = 6.0f;
+		furthestToChase = 4.0f;
 	}
 
 

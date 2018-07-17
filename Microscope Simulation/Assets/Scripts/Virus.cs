@@ -10,6 +10,7 @@ public class Virus : Boid
 	SpriteRenderer sprite = null;
 
 	private float spriteHeight;
+	private float rotationSpeed = 0;
 
 	private bool isAlive;
 
@@ -29,6 +30,12 @@ public class Virus : Boid
 
 	#region METHODS
 
+	private void Update()
+	{
+		transform.Rotate(Vector3.forward * rotationSpeed);
+	}
+
+
 	/// <summary>
 	/// Used to initialize member variables of this Virus object
 	/// </summary>
@@ -39,6 +46,7 @@ public class Virus : Boid
 		sprite = gameObject.GetComponent<SpriteRenderer>();
 		spriteHeight = sprite.size.y;
 		desiredSeperation = 1.5f * spriteHeight;
+		rotationSpeed = Random.Range(-1.5f, 1.5f);
 	}
 
 

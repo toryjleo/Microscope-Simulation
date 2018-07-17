@@ -120,9 +120,9 @@ public class Boid : MonoBehaviour {
 		}
 
 		// Rotate the transform so that the sprite is facing the direction of the velocity
-		Vector2 dir = new Vector2(velocity.x, velocity.y);
+		/*Vector2 dir = new Vector2(velocity.x, velocity.y);
 		float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90;
-		transform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
+		transform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);*/
 		
 		// Update position
 		position += velocity * Time.deltaTime;

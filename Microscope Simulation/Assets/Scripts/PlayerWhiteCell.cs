@@ -8,6 +8,16 @@ public class PlayerWhiteCell : WhiteCell
 	#region METHODS
 
 	/// <summary>
+	/// Used to initialize member variables of this WhiteCell object
+	/// </summary>
+	public override void Init()
+	{
+		base.Init();
+		maxSpeed = 8.0f;
+	}
+
+
+	/// <summary>
 	/// Takes player input to move the player left, right, up and down
 	/// </summary>
 	public void PlayerInput()
