@@ -91,7 +91,7 @@ Shader "Custom/CRTShader" {
 		// Find the pixel number
 		float2 pixLoc = i.screenPos.xy * _ScreenParams.xy;
 		// Create a mask to apply to the color
-		float modulo = fmod(pixLoc.x, 3);
+		float modulo = fmod(pixLoc.y, 3);
 		float4 muls = float4(0, 0, 0, 1);
 		if ((int)modulo == 1) 
 		{
