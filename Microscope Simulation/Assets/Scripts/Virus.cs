@@ -30,13 +30,15 @@ public class Virus : Boid
 	public override void Init()
 	{
 		base.Init();
-		isAlive = true;
-		sprite = gameObject.GetComponent<SpriteRenderer>();
+
 		aliveColor = new Color(1, 1, 1, 0.6f);
+		rotationSpeed = Random.Range(-1.5f, 1.5f);
+		isAlive = true;
+
+		sprite = gameObject.GetComponent<SpriteRenderer>();
 		sprite.color = aliveColor;
 		spriteHeight = sprite.size.y;
 		desiredSeperation = 1.5f * spriteHeight;
-		rotationSpeed = Random.Range(-1.5f, 1.5f);
 	}
 
 

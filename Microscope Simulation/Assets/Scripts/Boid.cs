@@ -7,9 +7,7 @@ public class Boid : MonoBehaviour {
 
 	#region CONSTS
 
-	/// <summary>
-	/// How far to go fromt he center of the screen before wrapping
-	/// </summary>
+	// How far to go from the center of the screen before wrapping
 	private const float  WIDTH_TO_WRAP = 11.25f;
 	private const float HEIGHT_TO_WRAP = 6.25f;
 
@@ -141,8 +139,8 @@ public class Boid : MonoBehaviour {
 
 	public virtual void Respawn(float xLoc, float yLoc)
 	{
-		Init();
 		transform.position = new Vector2(xLoc, yLoc);
+		Init();
 	}
 
 

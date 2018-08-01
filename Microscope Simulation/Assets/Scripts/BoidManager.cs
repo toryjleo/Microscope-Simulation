@@ -14,7 +14,7 @@ public class BoidManager : MonoBehaviour {
 
 	// Consts for spawning/respawning
 	private const int NUMBER_OF_VIRUSES_TO_SPAWN = 100;
-	private const int NUMBER_OF_VIRUSES_BEFORE_RESPAWN = 10;
+	private const int NUMBER_OF_VIRUSES_BEFORE_RESPAWN = 20;
 	private const int NUMBER_OF_WHITE_CELLS_TO_SPAWN = 1;
 
 	/// <summary>
@@ -119,6 +119,7 @@ public class BoidManager : MonoBehaviour {
 		// Get the nuber of viruses that are not consumed
 		int numVirusesAlive = viruses.Where(x => x.IsAlive).Count<Boid>();
 
+		// When the number of viruses is low, just spawn a bunch on the eastern bounds
 		if (numVirusesAlive <= NUMBER_OF_VIRUSES_BEFORE_RESPAWN)
 		{
 			foreach (Boid virus in viruses)
@@ -130,7 +131,7 @@ public class BoidManager : MonoBehaviour {
 				}
 				else if (!virusCast.IsAlive)
 				{
-					float xLoc = Random.Range(virusCast.westBounds, virusCast.eastBounds);
+					float xLoc = Random.Range(virusCast.eastBounds - 1, virusCast.eastBounds);
 					float yLoc = Random.Range(virusCast.southBounds, virusCast.northBounds);
 					virusCast.Respawn(xLoc, yLoc);
 				}
