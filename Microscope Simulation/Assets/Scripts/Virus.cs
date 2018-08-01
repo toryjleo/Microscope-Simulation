@@ -9,22 +9,10 @@ public class Virus : Boid
 
 	SpriteRenderer sprite = null;
 
+	private Color aliveColor;
+
 	private float spriteHeight;
 	private float rotationSpeed = 0;
-
-	private bool isAlive;
-
-	#endregion
-
-	#region ACCESSORS
-
-	public bool IsAlive
-	{
-		get
-		{
-			return isAlive;
-		}
-	}
 
 	#endregion
 
@@ -44,9 +32,18 @@ public class Virus : Boid
 		base.Init();
 		isAlive = true;
 		sprite = gameObject.GetComponent<SpriteRenderer>();
+		aliveColor = new Color(1, 1, 1, 0.6f);
+		sprite.color = aliveColor;
 		spriteHeight = sprite.size.y;
 		desiredSeperation = 1.5f * spriteHeight;
 		rotationSpeed = Random.Range(-1.5f, 1.5f);
+	}
+
+
+	public override void Respawn(float xLoc, float yLoc)
+	{
+		base.Respawn(xLoc, yLoc);
+		sprite.color = aliveColor;
 	}
 
 

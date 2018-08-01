@@ -3,6 +3,7 @@ using System.Threading;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Diagnostics;
+using System.Linq;
 
 /// <summary>
 /// Class used to spawn, manage, and update the Vehicle objects
@@ -11,16 +12,17 @@ public class BoidManager : MonoBehaviour {
 
 	#region CONSTS
 
-	/// <summary>
-	/// Consts for threading
-	/// </summary>
-	private const int NUMBER_OF_ARROWS_TO_SPAWN = 100;
+	// Consts for spawning/respawning
+	private const int NUMBER_OF_VIRUSES_TO_SPAWN = 100;
+	private const int NUMBER_OF_VIRUSES_BEFORE_RESPAWN = 10;
 	private const int NUMBER_OF_WHITE_CELLS_TO_SPAWN = 1;
-	private const int NUMBER_OF_THREADS = 4;
 
 	/// <summary>
-	/// Force multipliers for Viruses
+	/// Const for threading
 	/// </summary>
+	private const int NUMBER_OF_THREADS = 4;
+
+	// Force multipliers for Viruses
 	private const float VIRUS_SEPERATE_MULTIPLIER = 2f;
 	private const float VIRUS_ALIGN_MULTIPLIER = 1.75f;
 	private const float VIRUS_COHESION_MULTIPLIER = 0.5f;
@@ -70,7 +72,7 @@ public class BoidManager : MonoBehaviour {
 	void Start ()
 	{
 		// Initialize Viruses
-		for(int i = 0; i < NUMBER_OF_ARROWS_TO_SPAWN; i++)
+		for(int i = 0; i < NUMBER_OF_VIRUSES_TO_SPAWN; i++)
 		{
 			float spawnY = Random.Range
 				(Camera.main.ScreenToWorldPoint(new Vector2(0, 0)).y, Camera.main.ScreenToWorldPoint(new Vector2(0, Screen.height)).y);
@@ -111,8 +113,29 @@ public class BoidManager : MonoBehaviour {
 		avoidList.Add(player);
 
 		// Initialize an array of threads
-		int subArrayLen = NUMBER_OF_ARROWS_TO_SPAWN / NUMBER_OF_THREADS;
+		int subArrayLen = NUMBER_OF_VIRUSES_TO_SPAWN / NUMBER_OF_THREADS;
 		Thread[] threads = new Thread[NUMBER_OF_THREADS];
+
+		// Get the nuber of viruses that are not consumed
+		int numVirusesAlive = viruses.Where(x => x.IsAlive).Count<Boid>();
+
+		if (numVirusesAlive <= NUMBER_OF_VIRUSES_BEFORE_RESPAWN)
+		{
+			foreach (Boid virus in viruses)
+			{
+				Virus virusCast = virus as Virus;
+				if (virusCast == null)
+				{
+					UnityEngine.Debug.LogError("Element in List viruses is not of type Virus");
+				}
+				else if (!virusCast.IsAlive)
+				{
+					float xLoc = Random.Range(virusCast.westBounds, virusCast.eastBounds);
+					float yLoc = Random.Range(virusCast.southBounds, virusCast.northBounds);
+					virusCast.Respawn(xLoc, yLoc);
+				}
+			}
+		}
 
 		// Call Flock for the Viruses
 		for (int i = 0; i < NUMBER_OF_THREADS; i++)

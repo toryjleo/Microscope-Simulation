@@ -21,13 +21,11 @@ public class Boid : MonoBehaviour {
 	#region VARIABLES
 	public float maxSpeed;
 
-	/// <summary>
-	/// Bounds the Boid cannot exceed in the world space
-	/// </summary>
-	private float northBounds;
-	private float southBounds;
-	private float eastBounds;
-	private float westBounds;
+	// Bounds the Boid cannot exceed in the world space
+	public float northBounds;
+	public float southBounds;
+	public float eastBounds;
+	public float westBounds;
 
 	/// <summary>
 	/// A Boid's desired distance from its neighbor
@@ -44,12 +42,24 @@ public class Boid : MonoBehaviour {
 	/// </summary>
 	protected float furthestToChase;
 
-	/// <summary>
-	/// Variables for tracking physics related stuff
-	/// </summary>
+	// Variables for tracking physics related stuff
 	private Vector3 acceleration;
 	private Vector3 velocity;
 	public Vector3 position;
+
+	protected bool isAlive;
+
+	#endregion
+
+	#region ACCESSORS
+
+	public bool IsAlive
+	{
+		get
+		{
+			return isAlive;
+		}
+	}
 
 	#endregion
 
@@ -118,11 +128,6 @@ public class Boid : MonoBehaviour {
 			velocity.Normalize();
 			velocity *= maxSpeed;
 		}
-
-		// Rotate the transform so that the sprite is facing the direction of the velocity
-		/*Vector2 dir = new Vector2(velocity.x, velocity.y);
-		float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90;
-		transform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);*/
 		
 		// Update position
 		position += velocity * Time.deltaTime;
@@ -131,6 +136,13 @@ public class Boid : MonoBehaviour {
 
 		// Clear the acceleration for the next frame
 		acceleration = Vector3.zero;
+	}
+
+
+	public virtual void Respawn(float xLoc, float yLoc)
+	{
+		Init();
+		transform.position = new Vector2(xLoc, yLoc);
 	}
 
 
