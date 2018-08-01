@@ -20,7 +20,8 @@ This project was made in Unity 2017.3.1f1
 ## Why Use Unity?
  - The Unity Engine allows changes to HLSL shaders to take affect during runtime, which speeds up the iterating and debugging process. 
  - Although I had only worked with shaders in GLSL previously, there were enough similarities between GLSL and HLSL to make the process of learning HLSL not too hard.
- 
+
+## Assets
 Virus image pulled from: https://www.stuffyoushouldknow.com/podcasts/virus-talk-with-josh-and-chuck.htm
 
 Music composed by Garrett Young
