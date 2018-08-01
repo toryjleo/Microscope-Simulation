@@ -4,12 +4,14 @@ The project is themed around the idea of looking through a microscope at white b
 
 This project was made in Unity 2017.3.1f1
 
-Virus image pulled from: https://www.stuffyoushouldknow.com/podcasts/virus-talk-with-josh-and-chuck.htm
-
 ## To Run
  - Download this project as a zip onto a windows system. 
  - Go into the PreCompiledBuild folder and double click on the Unity executable named "Microscope Simulation".
- - You can use "WASD" to move the player controllable white cell and can press escape button to quit.
+ 
+ ### Playing the Simulation
+ - Use "WASD" to move the player controllable white cell .
+ - Press escape button to quit.
+ - The simulation loops, respawning the viruses.
 
  
 ## Purpose of Project
@@ -19,3 +21,6 @@ Virus image pulled from: https://www.stuffyoushouldknow.com/podcasts/virus-talk-
  - The Unity Engine allows changes to HLSL shaders to take affect during runtime, which speeds up the iterating and debugging process. 
  - Although I had only worked with shaders in GLSL previously, there were enough similarities between GLSL and HLSL to make the process of learning HLSL not too hard.
  
+Virus image pulled from: https://www.stuffyoushouldknow.com/podcasts/virus-talk-with-josh-and-chuck.htm
+
+Music composed by Garrett Young
